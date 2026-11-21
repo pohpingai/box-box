@@ -51,5 +51,15 @@
   any pit stop, with a yellow banner saying why.
 - After the race: a lap slider replays any lap (tower, flags and radio as they were).
 
+## Step 2.2 — Position bug fix ✅ done
+- Bug: the position sent to a brain was worked out from the gap AFTER rounding
+  to 0.01s. When cars were less than 0.005s apart the gap showed 0.00 and BOTH
+  teams were told "P1" (69 of 20,000 laps over 1000 test races). Now the position
+  comes from the exact times, the same order the screen shows: 0 errors.
+- Radio lines show exactly what the brain was told: "Lap 20 · A (told: P1, +0.23s ahead)".
+- New radio note when the lead changes DURING a lap: "🔁 Team B takes P1 during this lap".
+  (In monza Team A really led at the start of laps 18–20 and lost it on the last lap.)
+- Checked on monza in the browser with the real AI: told position = screen 20/20 laps.
+
 ## Next: Step 3 — simulate() tool
 Let the strategist test "what if I box now?" before making a call.

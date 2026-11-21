@@ -65,6 +65,7 @@ async function start() {
       radio.add(race.lap, `⚠️ Team A's AI is unavailable (${esc(ai.isOffline())}). The rule bot takes over.`, "news");
     }
     events.forEach((e) => radio.add(e.lap, callLine(e)));
+    leadChange(replay.frame(race.lap - 1), frameOf(race));
     replay.record(race);
     drawFrame(frameOf(race));
     radio.render(race.lap);
@@ -74,6 +75,15 @@ async function start() {
     }
   }
   finish();
+}
+
+// The calls above were made at the START of the lap. If the order flipped
+// DURING the lap, say so, so the radio and the tower never seem to disagree.
+function leadChange(before, after) {
+  const was = before.cars[0].team, now = after.cars[0].team;
+  if (was === now) return;
+  const gap = (after.cars[1].time - after.cars[0].time).toFixed(2);
+  radio.add(after.lap, `Lap ${after.lap} · 🔁 Team ${now} takes P1 during this lap (now ${gap}s ahead of Team ${was})`, "news");
 }
 
 // Stop and explain when something big happens (if the box is ticked).

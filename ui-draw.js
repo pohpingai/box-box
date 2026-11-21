@@ -59,15 +59,17 @@ export function makeRadio() {
   }
 }
 
-// "Lap 20 · A (P1, 0.23s ahead): Push now. Reason: …"
-// The position is what the team saw at the START of the lap, when it made the call.
+// "Lap 20 · A (told: P1, +0.23s ahead): Push now. Reason: …"
+// "told" = exactly what the team's brain was sent at the START of the lap.
 export function callLine(e) {
-  const g = e.state.gapToRival;
-  const where = g === 0 ? "level" : `${Math.abs(g).toFixed(2)}s ${g < 0 ? "ahead" : "behind"}`;
+  const { position, gapToRival: g } = e.state;
+  const ahead = position === "P1";
+  const size = Math.abs(g) < 0.01 ? "<0.01s" : `${Math.abs(g).toFixed(2)}s`;
+  const where = ahead ? `+${size} ahead` : `${size} behind`;
   const fb = e.brain === "fallback";
   const reason = esc(fb ? e.reason.replace(" (fallback)", "") : e.reason);
   return `Lap ${e.lap} · <span class="t${e.team.toLowerCase()}">${e.team}</span> ` +
-    `<span class="why">(${e.state.position}, ${where})</span>: ${callToWords(e.call)}. ` +
+    `<span class="why">(told: ${position}, ${where})</span>: ${callToWords(e.call)}. ` +
     `<span class="why">Reason: ${reason}</span>` +
     (fb ? ` <span class="fb">(fallback)</span> <span class="why">· ${esc(e.why)}</span>` : "");
 }

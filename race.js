@@ -120,7 +120,10 @@ export function teamView(race, team) {
   const me = race.cars[team], them = race.cars[rival];
   const lap = race.lap + 1;
   const gap = +(me.time - them.time).toFixed(2); // negative = I'm ahead
-  const position = gap <= 0 ? "P1" : "P2";
+  // Position comes from the exact times, the same order the screen shows
+  // (standings). NOT from the rounded gap: a 0.004s gap rounds to 0.00,
+  // which used to tell BOTH cars they were P1.
+  const position = standings(race)[0].team === team ? "P1" : "P2";
   return {
     // A plain sentence first, so nobody (human or AI) has to decode the sign of the gap.
     situation: describe(lap, position, gap),
@@ -138,7 +141,9 @@ export function teamView(race, team) {
 
 // "Start of lap 20 of 20: you are P1, 0.23s AHEAD of the rival."
 function describe(lap, position, gap) {
-  const where = gap === 0 ? "level with" : `${Math.abs(gap).toFixed(2)}s ${gap < 0 ? "AHEAD of" : "BEHIND"}`;
+  const where = Math.abs(gap) < 0.01
+    ? `less than 0.01s ${position === "P1" ? "AHEAD of" : "BEHIND"}`
+    : `${Math.abs(gap).toFixed(2)}s ${gap < 0 ? "AHEAD of" : "BEHIND"}`;
   return `Start of lap ${lap} of ${RULES.laps}: you are ${position}, ${where} the rival.`;
 }
 
