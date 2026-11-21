@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Box Box · AI Pit Wall</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>BOX&nbsp;BOX <span>AI pit wall · Step 1</span></h1>
+    <p class="sub">You are the team boss. The brains make the calls. You watch.</p>
+  </header>
+
+  <main>
+    <!-- Team setup cards -->
+    <section class="teams">
+      <div class="card team" data-team="A">
+        <div class="team-head"><span class="dot a"></span>Team A</div>
+        <div class="row"><label>Brain</label><span class="val">Rule bot</span></div>
+        <div class="row"><label>Start tyre</label><span class="val" id="startA"></span></div>
+        <!-- Step 2+: model, style and tools dropdowns go here -->
+        <div class="row later"><label>Model</label><select disabled><option>— step 2 —</option></select></div>
+        <div class="row later"><label>Style</label><select disabled><option>— step 2 —</option></select></div>
+        <div class="row later"><label>Tools</label><select disabled><option>— step 3 —</option></select></div>
+      </div>
+      <div class="card team" data-team="B">
+        <div class="team-head"><span class="dot b"></span>Team B</div>
+        <div class="row"><label>Brain</label><span class="val">Rule bot</span></div>
+        <div class="row"><label>Start tyre</label><span class="val" id="startB"></span></div>
+        <div class="row later"><label>Model</label><select disabled><option>— step 4 —</option></select></div>
+        <div class="row later"><label>Style</label><select disabled><option>— step 2 —</option></select></div>
+        <div class="row later"><label>Tools</label><select disabled><option>— step 3 —</option></select></div>
+      </div>
+    </section>
+
+    <!-- Controls -->
+    <section class="card controls">
+      <label for="seed">Seed</label>
+      <input id="seed" value="monza" autocomplete="off" />
+      <button id="dice" title="Random seed">🎲</button>
+      <button id="run" class="go">RUN RACE</button>
+    </section>
+
+    <!-- Live view -->
+    <section class="card live">
+      <div class="live-head">
+        <div class="lap">LAP <b id="lap">0</b>/<span id="laps">20</span></div>
+        <div id="flags" class="flags"></div>
+      </div>
+      <div class="track"><div class="car a" id="carA">A</div><div class="car b" id="carB">B</div></div>
+      <div id="tower" class="tower"></div>
+    </section>
+
+    <!-- Radio feed -->
+    <section class="card radio">
+      <h2>📻 Radio</h2>
+      <ol id="feed" class="feed"><li class="muted">Press RUN RACE to start.</li></ol>
+    </section>
+
+    <!-- Result -->
+    <section class="card result hidden" id="result">
+      <h2>🏁 Result</h2>
+      <div id="resultText"></div>
+      <button id="download">Download log (JSON)</button>
+    </section>
+  </main>
+
+  <footer>Same seed = same race. No AI yet: both teams use the rule bot.</footer>
+  <script type="module" src="ui.js"></script>
+</body>
+</html>
