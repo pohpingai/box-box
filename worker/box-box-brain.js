@@ -11,7 +11,11 @@
  *   PASSCODE       — the word the page must send before we spend any money
  *
  * One route: POST /decide   body: { passcode, state, rules }
+ * Each lap the AI may first ask for simulations ("what if I box now?") before
+ * its final call; that back-and-forth lives in strategist-loop.js.
  */
+
+import { decideWithTools } from "./strategist-loop.js";
 
 const SETTINGS = {
   MODEL: "anthropic/claude-haiku-5.5",
@@ -23,7 +27,6 @@ const SETTINGS = {
   AI_TIMEOUT_MS: 7500, // the page gives up at 8s, so we give up a little sooner
 };
 const OPENROUTER = "https://openrouter.ai/api/v1";
-export const CALLS = ["stay_out", "push", "normal", "save", "box_soft", "box_medium", "box_hard"];
 
 // ---------- Small helpers ----------
 function headers(extra = {}) {
@@ -83,41 +86,11 @@ async function spentToday(env) {
   return spend.today;
 }
 
-// ---------- Check the AI's answer ----------
-// Returns { call, reason } or throws if the answer breaks the rules.
-export function checkAnswer(text) {
-  let out;
-  try {
-    out = JSON.parse(String(text).trim().replace(/^```(?:json)?\s*|\s*```$/g, ""));
-  } catch {
-    throw new Error("the AI did not reply in JSON");
-  }
-  const call = String(out?.call || "").trim().toLowerCase();
-  if (!CALLS.includes(call)) throw new Error(`the AI chose "${out?.call}", which is not on the list`);
-  const reason = String(out?.reason || "").replace(/\s+/g, " ").trim().slice(0, 140);
-  if (!reason) throw new Error("the AI gave no reason");
-  return { call, reason };
-}
-
-// ---------- Ask the AI ----------
-// The answer shape ("JSON schema"): a call from the list, plus a reason.
-const ANSWER_SHAPE = {
-  type: "json_schema",
-  json_schema: {
-    name: "strategy_call",
-    strict: true,
-    schema: {
-      type: "object",
-      additionalProperties: false,
-      required: ["call", "reason"],
-      properties: { call: { type: "string", enum: CALLS }, reason: { type: "string" } },
-    },
-  },
-};
-async function askAI(env, system, user) {
+// ---------- Ask the AI (one request) ----------
+async function askAI(env, request, msLeft) {
   const res = await fetch(`${OPENROUTER}/chat/completions`, {
     method: "POST",
-    signal: AbortSignal.timeout(SETTINGS.AI_TIMEOUT_MS),
+    signal: AbortSignal.timeout(Math.max(500, msLeft)),
     headers: {
       Authorization: `Bearer ${env.OPENROUTER_KEY}`,
       "Content-Type": "application/json",
@@ -125,26 +98,23 @@ async function askAI(env, system, user) {
     },
     body: JSON.stringify({
       model: SETTINGS.MODEL,
-      max_tokens: 150,
+      max_tokens: 300,
       // No silent "thinking" first: it's slower and used up the word budget.
       reasoning: { enabled: false },
-      // Ask OpenRouter to hold the AI to this exact answer shape.
-      response_format: ANSWER_SHAPE,
       usage: { include: true },
-      messages: [{ role: "system", content: system }, { role: "user", content: user }],
+      ...request, // messages, tools, tool_choice
     }),
   });
   if (!res.ok) throw new Error(`OpenRouter said ${res.status}: ${(await res.text()).slice(0, 150)}`);
   const data = await res.json();
   if (data.error) throw new Error(`OpenRouter error: ${JSON.stringify(data.error).slice(0, 150)}`);
-  const cost = Number(data.usage?.cost || 0);
-  const text = data.choices?.[0]?.message?.content || "";
-  return { text, cost };
+  return { message: data.choices?.[0]?.message, cost: Number(data.usage?.cost || 0) };
 }
 
 // ---------- The front door ----------
 export default {
   async fetch(request, env) {
+    const started = Date.now(); // the page waits 8s in total, so our clock starts now
     const url = new URL(request.url);
     const origin = request.headers.get("Origin") || "";
 
@@ -180,13 +150,19 @@ export default {
         return reply(429, { error: `Daily limit reached ($${spent.toFixed(3)} of $${SETTINGS.DAILY_LIMIT_USD}). Try again tomorrow.` });
       }
       const system = await loadPrompt();
-      const { text, cost } = await askAI(env, system, `Race situation:\n${situation}\n\nYour call?`);
-      spend.today += cost;
       try {
-        return reply(200, { ...checkAnswer(text), cost });
+        const out = await decideWithTools({
+          ask: (request, msLeft) => askAI(env, request, msLeft),
+          system, state, rules,
+          deadline: started + SETTINGS.AI_TIMEOUT_MS,
+        });
+        spend.today += out.cost;
+        return reply(200, out); // { call, reason, cost, sims }
       } catch (e) {
-        // We still paid for a bad answer, so tell the page the cost.
-        return reply(502, { error: e.message, cost });
+        // We may have paid for part of the conversation, so report the cost.
+        spend.today += e.cost || 0;
+        const slow = e.name === "TimeoutError" || e.name === "AbortError" || /too long/.test(e.message);
+        return reply(slow ? 504 : 502, { error: slow ? "the AI took too long" : e.message, cost: e.cost || 0 });
       }
     } catch (e) {
       const slow = e.name === "TimeoutError" || e.name === "AbortError";

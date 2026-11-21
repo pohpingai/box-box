@@ -71,7 +71,15 @@ export function callLine(e) {
   return `Lap ${e.lap} · <span class="t${e.team.toLowerCase()}">${e.team}</span> ` +
     `<span class="why">(told: ${position}, ${where})</span>: ${callToWords(e.call)}. ` +
     `<span class="why">Reason: ${reason}</span>` +
-    (fb ? ` <span class="fb">(fallback)</span> <span class="why">· ${esc(e.why)}</span>` : "");
+    (fb ? ` <span class="fb">(fallback)</span> <span class="why">· ${esc(e.why)}</span>` : "") +
+    simLine(e.sims);
+}
+
+// "🧪 simulated: box_hard → +1.20s ahead · stay_out → 3.40s behind"
+function simLine(sims) {
+  if (!sims?.length) return "";
+  const parts = sims.map((x) => `${esc(x.call)} → ${x.finishGap <= 0 ? `+${Math.abs(x.finishGap).toFixed(2)}s ahead` : `${x.finishGap.toFixed(2)}s behind`}`);
+  return `<div class="sim">🧪 simulated: ${parts.join(" · ")}</div>`;
 }
 
 export function esc(s) {

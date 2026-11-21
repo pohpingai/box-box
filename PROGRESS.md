@@ -61,5 +61,19 @@
   (In monza Team A really led at the start of laps 18–20 and lost it on the last lap.)
 - Checked on monza in the browser with the real AI: told position = screen 20/20 laps.
 
-## Next: Step 3 — simulate() tool
-Let the strategist test "what if I box now?" before making a call.
+## Step 3 — simulate() tool ✅ done
+- The AI can ask "what if?" before deciding: simulate(box_hard), simulate(stay_out), …
+  then make_call. Example (monza, lap 3): stay_out → 4.76s behind, box_hard → 2.48s behind
+  → "Box for Hards now. Simulation shows best finish."
+- The simulation runs the real race engine from the team's own view only: no seed, so no
+  peeking at future safety cars, rain or slow stops. It assumes a clean race from the next lap,
+  that the rival drives like the rule bot, and that we follow the rule bot's plan afterwards.
+- Accuracy check (141 clean bot-vs-bot races): winner predicted right 137/141, average gap
+  error 2.4s (mostly random slow stops and lap-to-lap luck, which it ignores on purpose).
+- Radio shows the simulations under each call; the result shows the number of simulations.
+- Real AI vs rule bot: Team A won monza (+1.99s), spa (+3.87s) and suzuka (+4.63s).
+  About 30–40 simulations and ~$0.01 per race, slowest lap under 3s, 0 fallbacks.
+- Known limit: when Team B gets an AI brain (step 4), "rival = rule bot" is no longer true.
+
+## Next: Step 4 — Team B on another model
+Two different AI models race each other.

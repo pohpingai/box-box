@@ -1,4 +1,6 @@
 // agents/strategist.js — the "AI strategist" brain.
+// Since step 3 the AI can run simulate("box_hard") etc. in the Worker before
+// deciding; the results come back as `sims` and are shown on the radio.
 // Same shape as the rule bot: decide(team, state) → { call, reason },
 // except it takes a moment to answer (it returns a Promise), because it asks
 // an AI model over the internet via our Worker (box-box-brain).
@@ -9,16 +11,11 @@
 
 import { RULES, COMPOUNDS, MODES } from "../race.js";
 import * as bot from "./bot.js";
+import { TO_ENGINE } from "../sim.js"; // AI words ("box_hard") → engine codes ("BOX_HARD")
 
 export const WORKER_URL = "https://box-box-brain.pohping-ai.workers.dev/decide";
 export const MODEL_LABEL = "Haiku 5.5";
 const TIMEOUT_MS = 8000;
-
-// The AI speaks in lowercase words; the race engine uses capital codes.
-const TO_ENGINE = {
-  stay_out: "STAY", push: "PUSH", normal: "NORMAL", save: "SAVE",
-  box_soft: "BOX_SOFT", box_medium: "BOX_MEDIUM", box_hard: "BOX_HARD",
-};
 
 // The numbers the AI needs to plan, sent with every lap (so the
 // instructions file never goes out of date when race.js changes).
@@ -31,7 +28,7 @@ const RULES_FOR_AI = {
 // Make a fresh strategist for one race. It keeps its own score card.
 // onThinking(true/false) lets the page show "thinking…".
 export function makeStrategist({ passcode, onThinking = () => {} }) {
-  const stats = { calls: 0, fallbacks: 0, cost: 0 };
+  const stats = { calls: 0, fallbacks: 0, sims: 0, cost: 0 };
   let offline = null; // set when the Worker says no (wrong passcode, daily limit)
 
   async function decide(team, state) {
@@ -47,7 +44,8 @@ export function makeStrategist({ passcode, onThinking = () => {} }) {
       const call = TO_ENGINE[answer.call];
       if (!call) return fallback(team, state, `unknown call "${answer.call}"`);
       stats.calls += 1;
-      return { call, reason: answer.reason, extra: { brain: "ai" } };
+      stats.sims += answer.sims.length;
+      return { call, reason: answer.reason, extra: { brain: "ai", sims: answer.sims } };
     } finally {
       onThinking(false);
     }
@@ -87,5 +85,7 @@ async function askWorker(passcode, state) {
   if (typeof body.call !== "string" || typeof body.reason !== "string") {
     return { ok: false, cost, error: "invalid answer" };
   }
-  return { ok: true, call: body.call, reason: body.reason, cost };
+  // sims = the "what if?" simulations the AI ran before deciding (step 3).
+  const sims = Array.isArray(body.sims) ? body.sims.filter((x) => typeof x?.call === "string" && Number.isFinite(x?.finishGap)) : [];
+  return { ok: true, call: body.call, reason: body.reason, cost, sims };
 }

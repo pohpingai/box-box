@@ -32,9 +32,13 @@ AI "brains" for each team, watch the race, and compare which brain did better.
 - `race.js` — race engine: tyres, modes, pit stops, surprises, lap log.
 - `agents/bot.js` — the rule bot brain (if/then checklist).
 - `agents/strategist.js` — the AI brain (page side): asks the Worker, 8s timeout, fallback, score card.
+- `sim.js` — the simulate() tool: replays the rest of the race with the real engine from the
+  team's own view (no seed, so no peeking at future surprises; rival assumed = rule bot).
 - `prompts/strategist.md` — the AI strategist's instructions (the Worker reads it from the live site).
 - `worker/box-box-brain.js` — Cloudflare Worker: passcode, $0.20/day limit, only pohpingai.github.io,
   calls OpenRouter (`anthropic/claude-haiku-5.5`). Secrets: `OPENROUTER_KEY`, `PASSCODE`. See `worker/README.md`.
+- `worker/strategist-loop.js` — one lap's AI conversation: tools `simulate` and `make_call`,
+  max 3 rounds (the last forces make_call), max 6 sims, all inside 7.5s.
 - `ui.js`, `index.html`, `style.css` — the Team Boss screen (wiring).
 - `ui-player.js` — race clock: Slow 4s (default) / Normal 2s / Fast 0.5s per lap, Pause, Next lap.
 - `ui-draw.js` — draws one moment ("frame") and the radio feed. Radio call lines show the
@@ -49,7 +53,19 @@ AI "brains" for each team, watch the race, and compare which brain did better.
   (`reasoning: {enabled: false}`) and enforces the answer shape with a JSON schema.
   With thinking on it used the whole word budget and gave no answer.
 - Deploy the Worker with the Cloudflare API, sending `keep_bindings: ["secret_text"]`
-  so the owner's secrets survive a redeploy.
+  so the owner's secrets survive a redeploy. Since step 3 it is 5 modules:
+  `worker/box-box-brain.js` (main_module), `worker/strategist-loop.js`, `sim.js`, `race.js`,
+  `agents/bot.js`. Each multipart part needs `filename=<full path>` (e.g. `filename=worker/box-box-brain.js`),
+  otherwise Cloudflare says "No such module". Redeploy whenever any of those 5 files change.
+- The Worker can't be called from Claude's sandbox (workers.dev is blocked). Test locally:
+  import the Worker module in Node, call its `fetch()` with a fake env (OpenRouter auth is
+  injected by the proxy; run with `NODE_USE_ENV_PROXY=1`), and route the page's Worker calls
+  to it from Playwright.
+
+## Tools (step 3)
+- The AI answers through tools only: `simulate(call)` (any number, in parallel) then `make_call(call, reason)`.
+- Worker returns `{ call, reason, cost, sims: [{call, finishGap}] }`; the radio shows
+  "🧪 simulated: box_hard → +1.20s ahead · stay_out → 3.40s behind".
 
 ## The 9-step ladder
 1. **Engine** — race sim, rule bot, Team Boss screen, JSON log.

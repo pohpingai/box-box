@@ -97,3 +97,4 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 16px
 .banner { background: var(--sc); color: #000; font-weight: bold; font-size: 13px; padding: 8px 10px; border-radius: 6px; margin-bottom: 10px; }
 .replay { display: grid; gap: 4px; margin-bottom: 10px; font-size: 13px; }
 .replay input { width: 100%; padding: 0; accent-color: #e10600; }
+.feed .sim { color: var(--a); font-size: 12px; margin-top: 2px; opacity: .85; }
