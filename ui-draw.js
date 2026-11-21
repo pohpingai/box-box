@@ -75,11 +75,11 @@ export function callLine(e) {
     simLine(e.sims);
 }
 
-// "🧪 simulated: box_hard → +1.20s ahead · stay_out → 3.40s behind"
+// "🔧 tested: box_hard now → 2.10s behind · stay_out, box_hard on lap 8 → 1.00s ahead"
 function simLine(sims) {
   if (!sims?.length) return "";
-  const parts = sims.map((x) => `${esc(x.call)} → ${x.finishGap <= 0 ? `+${Math.abs(x.finishGap).toFixed(2)}s ahead` : `${x.finishGap.toFixed(2)}s behind`}`);
-  return `<div class="sim">🧪 simulated: ${parts.join(" · ")}</div>`;
+  const parts = sims.map((x) => `${esc(x.plan)} → ${x.finishGap <= 0 ? `${Math.abs(x.finishGap).toFixed(2)}s ahead` : `${x.finishGap.toFixed(2)}s behind`}`);
+  return `<div class="sim">🔧 tested: ${parts.join(" · ")}</div>`;
 }
 
 export function esc(s) {

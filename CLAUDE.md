@@ -21,7 +21,7 @@ AI "brains" for each team, watch the race, and compare which brain did better.
   Rule bot, AI strategist, anything else — same shape, so they can be swapped.
   An AI brain may return a Promise (it takes time to think); the page uses
   `stepLapAsync` so the race waits. Optional `extra` fields get saved in the log.
-- **AI brains always have a safety net:** if the AI is slow (over 8s), breaks or
+- **AI brains always have a safety net:** if the AI is slow (over 15s), breaks or
   answers something not on the list, the rule bot makes that lap's call, marked "(fallback)".
 - **Prompts are readable files** in `prompts/`, so the owner can edit them on GitHub.
 - Update `PROGRESS.md` at the end of each step.
@@ -31,14 +31,16 @@ AI "brains" for each team, watch the race, and compare which brain did better.
 ## Files
 - `race.js` — race engine: tyres, modes, pit stops, surprises, lap log.
 - `agents/bot.js` — the rule bot brain (if/then checklist).
-- `agents/strategist.js` — the AI brain (page side): asks the Worker, 8s timeout, fallback, score card.
-- `sim.js` — the simulate() tool: replays the rest of the race with the real engine from the
-  team's own view (no seed, so no peeking at future surprises; rival assumed = rule bot).
+- `agents/strategist.js` — the AI brain (page side): asks the Worker, 15s timeout, fallback, score card.
+- `sim.js` — the simulate(plan) tool: replays the rest of the race with the real engine (shared
+  code, never a copy) from the team's own view (no seed, so no peeking at future surprises;
+  rival assumed = rule bot). Plan = `{now, box_on_lap?, box_tyre?}`.
 - `prompts/strategist.md` — the AI strategist's instructions (the Worker reads it from the live site).
 - `worker/box-box-brain.js` — Cloudflare Worker: passcode, $0.20/day limit, only pohpingai.github.io,
   calls OpenRouter (`anthropic/claude-haiku-5.5`). Secrets: `OPENROUTER_KEY`, `PASSCODE`. See `worker/README.md`.
 - `worker/strategist-loop.js` — one lap's AI conversation: tools `simulate` and `make_call`,
-  max 3 rounds (the last forces make_call), max 6 sims, all inside 7.5s.
+  max 3 rounds (the last forces make_call), max 3 simulations per lap, all inside 14.5s.
+  The page's "☑ simulate" checkbox sends `tools: false` to switch simulate off.
 - `ui.js`, `index.html`, `style.css` — the Team Boss screen (wiring).
 - `ui-player.js` — race clock: Slow 4s (default) / Normal 2s / Fast 0.5s per lap, Pause, Next lap.
 - `ui-draw.js` — draws one moment ("frame") and the radio feed. Radio call lines show the
@@ -63,9 +65,9 @@ AI "brains" for each team, watch the race, and compare which brain did better.
   to it from Playwright.
 
 ## Tools (step 3)
-- The AI answers through tools only: `simulate(call)` (any number, in parallel) then `make_call(call, reason)`.
-- Worker returns `{ call, reason, cost, sims: [{call, finishGap}] }`; the radio shows
-  "🧪 simulated: box_hard → +1.20s ahead · stay_out → 3.40s behind".
+- The AI answers through tools only: `simulate(plan)` (max 3 per lap, may be parallel) then `make_call(call, reason)`.
+- Worker returns `{ call, reason, cost, sims: [{plan, finishGap}] }`; the radio shows
+  "🔧 tested: box_hard now → 2.48s behind · stay_out, box_hard on lap 10 → 6.84s ahead".
 
 ## The 9-step ladder
 1. **Engine** — race sim, rule bot, Team Boss screen, JSON log.

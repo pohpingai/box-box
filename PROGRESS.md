@@ -62,17 +62,27 @@
 - Checked on monza in the browser with the real AI: told position = screen 20/20 laps.
 
 ## Step 3 — simulate() tool ✅ done
-- The AI can ask "what if?" before deciding: simulate(box_hard), simulate(stay_out), …
-  then make_call. Example (monza, lap 3): stay_out → 4.76s behind, box_hard → 2.48s behind
-  → "Box for Hards now. Simulation shows best finish."
-- The simulation runs the real race engine from the team's own view only: no seed, so no
-  peeking at future safety cars, rain or slow stops. It assumes a clean race from the next lap,
-  that the rival drives like the rule bot, and that we follow the rule bot's plan afterwards.
-- Accuracy check (141 clean bot-vs-bot races): winner predicted right 137/141, average gap
-  error 2.4s (mostly random slow stops and lap-to-lap luck, which it ignores on purpose).
-- Radio shows the simulations under each call; the result shows the number of simulations.
-- Real AI vs rule bot: Team A won monza (+1.99s), spa (+3.87s) and suzuka (+4.63s).
-  About 30–40 simulations and ~$0.01 per race, slowest lap under 3s, 0 fallbacks.
+- Team A's AI can test plans before deciding, using real tool calling via OpenRouter:
+  simulate({now: "box_hard"}) or simulate({now: "stay_out", box_on_lap: 12, box_tyre: "medium"})
+  → predicted finish gap vs the rival. Then make_call(call, reason).
+- No cheating: the simulation starts from what the team can see, never the race's seed, so it
+  can't know future safety cars, rain or slow stops. It assumes a normal race from now on,
+  a rule-bot rival, and the rule bot's plan after yours.
+- Shared code: the Worker runs `sim.js`, which runs the real `race.js` (same formulas, no copy).
+- Max 3 simulations per lap. AI time limit raised from 8s to 15s.
+- Prompt: "Before any pit or tyre decision, test your options with simulate() and choose the best result."
+- Page: "Tools: ☑ simulate" checkbox on Team A's card (remembered in this browser); radio shows
+  "🔧 tested: box_hard now → 2.48s behind · stay_out, box_hard on lap 10 → 6.84s ahead";
+  the result shows tool calls used and cost.
+- Accuracy (141 clean bot-vs-bot races): winner predicted right 137/141, average gap error 2.4s.
+
+### Test: seed monza, real AI vs the rule bot (2 runs each)
+| simulate | Result | Tool calls | Cost | Slowest lap | Fallbacks |
+|---|---|---|---|---|---|
+| ON  | Team A wins by 2.17s (both runs) | 57 | $0.013 | 2.7s | 0 |
+| OFF | Team B wins by 0.08s (both runs) | 0  | $0.005 | 1.5s | 0 |
+
+- The AI simulated on almost every lap (57 of a possible 60), even quiet ones.
 - Known limit: when Team B gets an AI brain (step 4), "rival = rule bot" is no longer true.
 
 ## Next: Step 4 — Team B on another model

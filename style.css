@@ -98,3 +98,4 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 16px
 .replay { display: grid; gap: 4px; margin-bottom: 10px; font-size: 13px; }
 .replay input { width: 100%; padding: 0; accent-color: #e10600; }
 .feed .sim { color: var(--a); font-size: 12px; margin-top: 2px; opacity: .85; }
+.row label.tool { color: var(--text); display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }

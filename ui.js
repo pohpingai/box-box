@@ -20,6 +20,9 @@ $("startB").textContent = cap(RULES.startCompound.B);
 $("dice").onclick = () => ($("seed").value = Math.random().toString(36).slice(2, 7));
 $("run").onclick = start;
 $("download").onclick = download;
+// The simulate() tool switch is also remembered in this browser.
+$("simTool").checked = localStorage.getItem("boxbox-sim") !== "off";
+$("simTool").onchange = () => localStorage.setItem("boxbox-sim", $("simTool").checked ? "on" : "off");
 // The passcode is kept in this browser only (localStorage), never in the code.
 $("passcode").value = localStorage.getItem(PASS_KEY) || "";
 $("passcode").oninput = () => localStorage.setItem(PASS_KEY, $("passcode").value.trim());
@@ -38,7 +41,7 @@ updateButtons();
 
 async function start() {
   const seed = $("seed").value.trim() || "monza";
-  const ai = makeStrategist({ passcode: $("passcode").value.trim(), onThinking });
+  const ai = makeStrategist({ passcode: $("passcode").value.trim(), useSim: $("simTool").checked, onThinking });
   brains = { A: ai, B: bot };
   race = createRace(seed, { A: ai.decide, B: bot.decide });
   replay = makeReplay();
@@ -129,7 +132,8 @@ function finish() {
     <div>Team A (${esc(brains.A.name)}): ${fmt(r.times.A)} · ${r.stops.A} stop(s)</div>
     <div>Team B (${esc(bot.name)}): ${fmt(r.times.B)} · ${r.stops.B} stop(s)</div>
     <div class="muted">${race.news.length ? race.news.map((n) => esc(n.text)).join(" · ") : "A clean race, no surprises."}</div>`;
-  $("aiStats").innerHTML = `🧠 Team A's AI: <b>${s.calls}</b> AI calls · <b>${s.sims}</b> simulations · <b>${s.fallbacks}</b> fallback(s) · ` +
+  $("aiStats").innerHTML = `🧠 Team A's AI (simulate ${brains.A.name.includes("simulate") ? "ON" : "OFF"}): ` +
+    `<b>${s.calls}</b> AI calls · <b>${s.toolCalls}</b> tool calls · <b>${s.fallbacks}</b> fallback(s) · ` +
     `about <b>$${s.cost.toFixed(4)}</b>`;
   $("result").classList.remove("hidden");
   // Replay slider: drag back through the race.

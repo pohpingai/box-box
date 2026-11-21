@@ -10,7 +10,7 @@
  *   OPENROUTER_KEY — the OpenRouter API key
  *   PASSCODE       — the word the page must send before we spend any money
  *
- * One route: POST /decide   body: { passcode, state, rules }
+ * One route: POST /decide   body: { passcode, state, rules, tools }   (tools: false = no simulate)
  * Each lap the AI may first ask for simulations ("what if I box now?") before
  * its final call; that back-and-forth lives in strategist-loop.js.
  */
@@ -24,7 +24,7 @@ const SETTINGS = {
   // The strategist's instructions live on the website, so they can be edited
   // on GitHub without touching this Worker. Re-read at most once a minute.
   PROMPT_URL: "https://pohpingai.github.io/box-box/prompts/strategist.md",
-  AI_TIMEOUT_MS: 7500, // the page gives up at 8s, so we give up a little sooner
+  AI_TIMEOUT_MS: 14500, // the page gives up at 15s, so we give up a little sooner
 };
 const OPENROUTER = "https://openrouter.ai/api/v1";
 
@@ -114,7 +114,7 @@ async function askAI(env, request, msLeft) {
 // ---------- The front door ----------
 export default {
   async fetch(request, env) {
-    const started = Date.now(); // the page waits 8s in total, so our clock starts now
+    const started = Date.now(); // the page waits 15s in total, so our clock starts now
     const url = new URL(request.url);
     const origin = request.headers.get("Origin") || "";
 
@@ -154,6 +154,7 @@ export default {
         const out = await decideWithTools({
           ask: (request, msLeft) => askAI(env, request, msLeft),
           system, state, rules,
+          useSim: body.tools !== false, // the team boss can switch simulate() off
           deadline: started + SETTINGS.AI_TIMEOUT_MS,
         });
         spend.today += out.cost;
