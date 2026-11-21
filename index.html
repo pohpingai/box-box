@@ -8,7 +8,7 @@
 </head>
 <body>
   <header>
-    <h1>BOX&nbsp;BOX <span>AI pit wall · Step 1</span></h1>
+    <h1>BOX&nbsp;BOX <span>AI pit wall · Step 2</span></h1>
     <p class="sub">You are the team boss. The brains make the calls. You watch.</p>
   </header>
 
@@ -17,11 +17,11 @@
     <section class="teams">
       <div class="card team" data-team="A">
         <div class="team-head"><span class="dot a"></span>Team A</div>
-        <div class="row"><label>Brain</label><span class="val">Rule bot</span></div>
+        <div class="row"><label>Brain</label><span class="val" id="brainA">AI · Haiku 5.5</span></div>
         <div class="row"><label>Start tyre</label><span class="val" id="startA"></span></div>
-        <!-- Step 2+: model, style and tools dropdowns go here -->
-        <div class="row later"><label>Model</label><select disabled><option>— step 2 —</option></select></div>
-        <div class="row later"><label>Style</label><select disabled><option>— step 2 —</option></select></div>
+        <div class="row"><label>Status</label><span class="val" id="thinkA">ready</span></div>
+        <!-- Later steps: style and tools dropdowns go here -->
+        <div class="row later"><label>Style</label><select disabled><option>— later —</option></select></div>
         <div class="row later"><label>Tools</label><select disabled><option>— step 3 —</option></select></div>
       </div>
       <div class="card team" data-team="B">
@@ -29,7 +29,7 @@
         <div class="row"><label>Brain</label><span class="val">Rule bot</span></div>
         <div class="row"><label>Start tyre</label><span class="val" id="startB"></span></div>
         <div class="row later"><label>Model</label><select disabled><option>— step 4 —</option></select></div>
-        <div class="row later"><label>Style</label><select disabled><option>— step 2 —</option></select></div>
+        <div class="row later"><label>Style</label><select disabled><option>— later —</option></select></div>
         <div class="row later"><label>Tools</label><select disabled><option>— step 3 —</option></select></div>
       </div>
     </section>
@@ -40,6 +40,11 @@
       <input id="seed" value="monza" autocomplete="off" />
       <button id="dice" title="Random seed">🎲</button>
       <button id="run" class="go">RUN RACE</button>
+      <div class="pass">
+        <label for="passcode">AI passcode</label>
+        <input id="passcode" type="password" autocomplete="off" placeholder="needed for Team A's AI" />
+        <span class="muted small">Remembered in this browser only.</span>
+      </div>
     </section>
 
     <!-- Live view -->
@@ -62,11 +67,12 @@
     <section class="card result hidden" id="result">
       <h2>🏁 Result</h2>
       <div id="resultText"></div>
+      <div id="aiStats" class="ai-stats"></div>
       <button id="download">Download log (JSON)</button>
     </section>
   </main>
 
-  <footer>Same seed = same race. No AI yet: both teams use the rule bot.</footer>
+  <footer>Same seed = same surprises. Team A: AI strategist (rule bot steps in if it fails). Team B: rule bot.</footer>
   <script type="module" src="ui.js"></script>
 </body>
 </html>

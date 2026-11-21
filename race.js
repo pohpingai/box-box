@@ -134,35 +134,61 @@ export function teamView(race, team) {
 }
 
 // Run one lap. Returns the new events for this lap.
+// For brains that answer instantly (like the rule bot).
 export function stepLap(race) {
   if (race.done) return [];
-  const lap = race.lap + 1;
-  const sc = isOn(race.surprises.safetyCar, lap);
-  const rain = isOn(race.surprises.rain, lap);
-  const newEvents = [];
+  const lap = beginLap(race);
+  const decisions = {};
+  for (const team of ["A", "B"]) {
+    const state = teamView(race, team);
+    decisions[team] = applyRules(race, team, lap, state, safeDecide(race.deciders[team], team, state));
+  }
+  return applyLap(race, lap, decisions);
+}
 
+// Same as stepLap, but waits for brains that need time to think (like an AI
+// over the internet). The race simply pauses until both teams have answered.
+export async function stepLapAsync(race) {
+  if (race.done) return [];
+  const lap = beginLap(race);
+  const teams = ["A", "B"];
+  const states = teams.map((team) => teamView(race, team));
+  const answers = await Promise.all(teams.map((team, i) => safeDecideAsync(race.deciders[team], team, states[i])));
+  const decisions = {};
+  teams.forEach((team, i) => (decisions[team] = applyRules(race, team, lap, states[i], answers[i])));
+  return applyLap(race, lap, decisions);
+}
+
+// Announce surprises that start or end this lap. Returns the lap number.
+function beginLap(race) {
+  const lap = race.lap + 1;
   if (race.surprises.safetyCar?.start === lap) race.news.push({ lap, text: "🟡 SAFETY CAR deployed" });
   if (race.surprises.safetyCar?.end + 1 === lap) race.news.push({ lap, text: "🟢 Safety car in, racing resumes" });
   if (race.surprises.rain?.start === lap) race.news.push({ lap, text: "🌧️ Rain is falling" });
   if (race.surprises.rain?.end + 1 === lap) race.news.push({ lap, text: "☀️ Track drying" });
+  return lap;
+}
 
-  // 1) Ask both teams first (so neither sees the other's call this lap).
-  const decisions = {};
-  for (const team of ["A", "B"]) {
-    const state = teamView(race, team);
-    let { call, reason } = safeDecide(race.deciders[team], team, state);
-    // Rule: every car must stop at least once. Last lap with no stop = forced stop.
-    if (lap === RULES.laps && race.cars[team].stops === 0 && !call.startsWith("BOX_")) {
-      call = "BOX_SOFT";
-      reason = `Forced by the rules: no stop yet (team said: ${reason})`;
-    }
-    decisions[team] = { call, reason, state };
+// Rule: every car must stop at least once. Last lap with no stop = forced stop.
+function applyRules(race, team, lap, state, answer) {
+  let { call, reason } = answer;
+  if (lap === RULES.laps && race.cars[team].stops === 0 && !call.startsWith("BOX_")) {
+    call = "BOX_SOFT";
+    reason = `Forced by the rules: no stop yet (team said: ${reason})`;
   }
+  return { call, reason, state, extra: answer.extra };
+}
+
+// Apply both teams' calls (asked first, so neither saw the other's call).
+function applyLap(race, lap, decisions) {
+  const sc = isOn(race.surprises.safetyCar, lap);
+  const rain = isOn(race.surprises.rain, lap);
+  const newEvents = [];
 
   // 2) Apply calls and work out lap times.
   for (const team of ["A", "B"]) {
     const car = race.cars[team];
-    const { call, reason, state } = decisions[team];
+    const { call, reason, state, extra } = decisions[team];
     // Under the safety car everyone drives at the same slow pace.
     let lapTime = sc ? RULES.scLap : lapTimeFor(car, rain, race.rng);
     let pitNote = "";
@@ -188,7 +214,7 @@ export function stepLap(race) {
     }
     car.lastLap = lapTime;
     car.time += lapTime;
-    const ev = { lap, team, state, call, reason: reason + pitNote, lapTime: +lapTime.toFixed(2) };
+    const ev = { lap, team, state, call, reason: reason + pitNote, lapTime: +lapTime.toFixed(2), ...extra };
     race.events.push(ev);
     newEvents.push(ev);
   }
@@ -225,12 +251,23 @@ function wearTyre(car, rain) {
 // If a brain crashes or answers nonsense, stay out and say why.
 function safeDecide(fn, team, state) {
   try {
-    const out = fn(team, state) || {};
-    if (!CALLS.includes(out.call)) return { call: "STAY", reason: `Bad call "${out.call}", staying out` };
-    return { call: out.call, reason: String(out.reason || "no reason given") };
+    return cleanAnswer(fn(team, state));
   } catch (e) {
     return { call: "STAY", reason: `Brain error: ${e.message}` };
   }
+}
+async function safeDecideAsync(fn, team, state) {
+  try {
+    return cleanAnswer(await fn(team, state));
+  } catch (e) {
+    return { call: "STAY", reason: `Brain error: ${e.message}` };
+  }
+}
+// "extra" = optional notes a brain wants saved in the log (e.g. AI or fallback).
+function cleanAnswer(out = {}) {
+  out = out || {};
+  if (!CALLS.includes(out.call)) return { call: "STAY", reason: `Bad call "${out.call}", staying out` };
+  return { call: out.call, reason: String(out.reason || "no reason given"), extra: out.extra };
 }
 
 // ---------- Results and the log ----------
@@ -250,16 +287,17 @@ export function result(race) {
   };
 }
 
-export function exportLog(race, brains) {
+export function exportLog(race, brains, aiStats = null) {
   return {
     game: "Box Box",
-    step: 1,
+    step: 2,
     seed: race.seed,
     brains,
     rules: RULES,
     surprises: race.surprises,
     news: race.news,
     result: race.done ? result(race) : null,
+    aiStats,
     events: race.events,
   };
 }

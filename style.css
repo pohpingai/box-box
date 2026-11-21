@@ -74,3 +74,14 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 16px
   main { grid-template-columns: 1fr 1fr; }
   .teams, .controls, .result { grid-column: 1 / -1; }
 }
+
+/* Step 2: passcode box, "thinking…" status and AI score card. */
+.controls .pass { flex-basis: 100%; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.controls .pass input { flex: 1; min-width: 140px; }
+.small { font-size: 11px; }
+.thinking { color: var(--a); animation: blink 1s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .thinking { animation: none; } }
+.feed .fb { color: var(--sc); }
+.ai-stats { margin-bottom: 10px; padding: 8px; background: #0f1216; border-radius: 8px; border-left: 4px solid var(--a); font-size: 13px; }
+.ai-stats:empty { display: none; }
