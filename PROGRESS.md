@@ -40,5 +40,16 @@
 - Haiku 5.5 "thinks" quietly before answering. With a small word budget it used
   it all on thinking and never answered, so the Worker turns thinking off.
 
+## Step 2.1 — Clearer position + race controls ✅ done
+- The AI now gets `"position": "P1"/"P2"` and a plain sentence, e.g.
+  "Start of lap 20 of 20: you are P1, 0.23s AHEAD of the rival."
+  (It wasn't wrong before: in monza it led at the start of laps 18–20 and lost
+  0.31s on the last lap. The screen made it look wrong.)
+- Radio lines show the start-of-lap position: "Lap 20 · A (P1, 0.23s ahead): Push now".
+- Speed: Slow (4s/lap, default), Normal (2s), Fast (0.5s). Pause / Play, Next lap.
+- Auto-pause (tick box, on by default) after a safety car starts, rain starts or
+  any pit stop, with a yellow banner saying why.
+- After the race: a lap slider replays any lap (tower, flags and radio as they were).
+
 ## Next: Step 3 — simulate() tool
 Let the strategist test "what if I box now?" before making a call.

@@ -85,3 +85,15 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 16px
 .feed .fb { color: var(--sc); }
 .ai-stats { margin-bottom: 10px; padding: 8px; background: #0f1216; border-radius: 8px; border-left: 4px solid var(--a); font-size: 13px; }
 .ai-stats:empty { display: none; }
+
+/* Race speed controls, auto-pause banner and replay slider. */
+.player { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 10px; }
+.speeds { display: inline-flex; }
+.speeds button { border-radius: 0; margin-left: -1px; }
+.speeds button:first-child { border-radius: 6px 0 0 6px; margin-left: 0; }
+.speeds button:last-child { border-radius: 0 6px 6px 0; }
+.speeds button.on { background: #e10600; border-color: #e10600; font-weight: bold; }
+.player .auto { flex-basis: 100%; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.banner { background: var(--sc); color: #000; font-weight: bold; font-size: 13px; padding: 8px 10px; border-radius: 6px; margin-bottom: 10px; }
+.replay { display: grid; gap: 4px; margin-bottom: 10px; font-size: 13px; }
+.replay input { width: 100%; padding: 0; accent-color: #e10600; }

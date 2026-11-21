@@ -25,6 +25,8 @@ AI "brains" for each team, watch the race, and compare which brain did better.
   answers something not on the list, the rule bot makes that lap's call, marked "(fallback)".
 - **Prompts are readable files** in `prompts/`, so the owner can edit them on GitHub.
 - Update `PROGRESS.md` at the end of each step.
+- **Merge into `main` when tests pass — no need to ask.** Work on a branch, test
+  (engine regression + a browser check), then fast-forward `main` and push. `main` is the live site.
 
 ## Files
 - `race.js` — race engine: tyres, modes, pit stops, surprises, lap log.
@@ -33,7 +35,11 @@ AI "brains" for each team, watch the race, and compare which brain did better.
 - `prompts/strategist.md` — the AI strategist's instructions (the Worker reads it from the live site).
 - `worker/box-box-brain.js` — Cloudflare Worker: passcode, $0.20/day limit, only pohpingai.github.io,
   calls OpenRouter (`anthropic/claude-haiku-5.5`). Secrets: `OPENROUTER_KEY`, `PASSCODE`. See `worker/README.md`.
-- `ui.js`, `index.html`, `style.css` — the Team Boss screen.
+- `ui.js`, `index.html`, `style.css` — the Team Boss screen (wiring).
+- `ui-player.js` — race clock: Slow 4s (default) / Normal 2s / Fast 0.5s per lap, Pause, Next lap.
+- `ui-draw.js` — draws one moment ("frame") and the radio feed. Radio call lines show the
+  team's position at the START of the lap (what it saw when it made the call).
+- `ui-replay.js` — saves a frame after every lap for the replay slider.
 
 ## AI setup (step 2)
 - Page → Worker (`https://box-box-brain.pohping-ai.workers.dev/decide`) → OpenRouter → model.

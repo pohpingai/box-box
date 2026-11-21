@@ -53,6 +53,23 @@
         <div class="lap">LAP <b id="lap">0</b>/<span id="laps">20</span></div>
         <div id="flags" class="flags"></div>
       </div>
+      <!-- Race speed and pause controls (see ui-player.js) -->
+      <div class="player">
+        <div class="speeds" role="group" aria-label="Race speed">
+          <button data-speed="slow" class="on">Slow</button>
+          <button data-speed="normal">Normal</button>
+          <button data-speed="fast">Fast</button>
+        </div>
+        <button id="pause">⏸ Pause</button>
+        <button id="step">Next lap ⏭</button>
+        <label class="auto"><input type="checkbox" id="autoPause" checked /> Auto-pause on safety car, rain &amp; pit stops</label>
+      </div>
+      <div id="banner" class="banner hidden" role="status"></div>
+      <!-- After the race: drag to replay any lap (see ui-replay.js) -->
+      <div id="replayBox" class="replay hidden">
+        <label for="replay">Replay · lap <b id="replayLap">0</b></label>
+        <input type="range" id="replay" min="0" max="20" value="20" />
+      </div>
       <div class="track"><div class="car a" id="carA">A</div><div class="car b" id="carB">B</div></div>
       <div id="tower" class="tower"></div>
     </section>
