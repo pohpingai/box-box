@@ -1,4 +1,7 @@
 # Publishes the site to GitHub Pages on every push to main.
+# Two jobs, like GitHub's own starter recipe: "build" packs the site, then
+# "deploy" publishes it. With one job, the publish step sometimes looked for
+# the package before GitHub had finished storing it ("No artifacts found").
 name: Deploy to GitHub Pages
 on:
   push:
@@ -10,13 +13,10 @@ permissions:
   id-token: write
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false # let a publish finish instead of cutting it off halfway
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
@@ -25,5 +25,12 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v4
