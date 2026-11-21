@@ -119,18 +119,27 @@ export function teamView(race, team) {
   const rival = team === "A" ? "B" : "A";
   const me = race.cars[team], them = race.cars[rival];
   const lap = race.lap + 1;
-  const pos = me.time <= them.time ? 1 : 2;
+  const gap = +(me.time - them.time).toFixed(2); // negative = I'm ahead
+  const position = gap <= 0 ? "P1" : "P2";
   return {
+    // A plain sentence first, so nobody (human or AI) has to decode the sign of the gap.
+    situation: describe(lap, position, gap),
     lap,
     lapsLeft: RULES.laps - lap + 1, // including this one
     totalLaps: RULES.laps,
-    position: pos,
-    gapToRival: +(me.time - them.time).toFixed(2), // negative = I'm ahead
+    position,
+    gapToRival: gap,
     safetyCar: isOn(race.surprises.safetyCar, lap),
     rain: isOn(race.surprises.rain, lap),
     me: { compound: me.compound, tyre: Math.round(me.tyre), mode: me.mode, stops: me.stops },
     rival: { compound: them.compound, tyre: Math.round(them.tyre), mode: them.mode, stops: them.stops },
   };
+}
+
+// "Start of lap 20 of 20: you are P1, 0.23s AHEAD of the rival."
+function describe(lap, position, gap) {
+  const where = gap === 0 ? "level with" : `${Math.abs(gap).toFixed(2)}s ${gap < 0 ? "AHEAD of" : "BEHIND"}`;
+  return `Start of lap ${lap} of ${RULES.laps}: you are ${position}, ${where} the rival.`;
 }
 
 // Run one lap. Returns the new events for this lap.

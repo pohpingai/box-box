@@ -21,7 +21,10 @@ Your goal: finish ahead of Team B (lowest total race time wins).
 - Safety car: everyone drives slowly and the gap between the cars shrinks,
   so a pit stop costs much less time than usual. It is often a great moment to stop.
 - Rain: everyone is slower and tyres wear less.
-- gapToRival is in seconds. Negative means you are AHEAD. Positive means you are behind.
+- "situation" says in plain words where you are, e.g. "you are P2, 0.23s BEHIND the rival".
+  Trust it. It describes the START of this lap, before anyone drives it.
+- "position" is "P1" (you are in front) or "P2" (you are behind).
+- gapToRival is the same gap as a number: negative = you are AHEAD, positive = you are BEHIND.
 - There is no overtaking on track: whoever has the lower total time is in front.
 
 ## How to answer
