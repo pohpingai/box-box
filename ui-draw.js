@@ -56,6 +56,8 @@ export function makeRadio() {
     $("feed").innerHTML = shown.length
       ? shown.map((m) => `<li class="${m.cls}">${m.html}</li>`).join("")
       : '<li class="muted">Press RUN RACE to start.</li>';
+    // The small radio overlay on the 3D view: just the newest few messages.
+    $("radioMini").innerHTML = shown.slice(0, 4).map((m) => `<li class="${m.cls}">${m.html}</li>`).join("");
   }
 }
 

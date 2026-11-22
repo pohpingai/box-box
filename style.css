@@ -99,3 +99,22 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 16px
 .replay input { width: 100%; padding: 0; accent-color: #e10600; }
 .feed .sim { color: var(--a); font-size: 12px; margin-top: 2px; opacity: .85; }
 .row label.tool { color: var(--text); display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+
+/* Step 3.5: the 3D Las Vegas night view, with the small radio overlay on it. */
+.stage { position: relative; height: min(58vh, 440px); border-radius: 10px; overflow: hidden; background: #020308; border: 1px solid var(--line); }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.stage-tag { position: absolute; top: 10px; left: 12px; font-size: 11px; letter-spacing: 3px; color: #f5c36b; text-shadow: 0 0 8px #f5a623; }
+.stage-legend { position: absolute; top: 28px; left: 12px; font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.stage-legend .dot { box-shadow: 0 0 6px currentColor; } .stage-legend .dot.b { margin-left: 6px; }
+.radio-mini { position: absolute; left: 8px; right: 8px; bottom: 8px; margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; pointer-events: none; }
+.radio-mini li { font-size: 11px; line-height: 1.3; padding: 4px 8px; border-radius: 6px; background: rgba(8, 10, 18, .72); border-left: 2px solid #e10600;
+  backdrop-filter: blur(4px); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.radio-mini li:nth-child(n+3) { display: none; } /* phones: only the newest 2 */
+.radio-mini .why, .radio-mini .sim { display: none; }
+.radio-mini .ta { color: var(--a); } .radio-mini .tb { color: var(--b); } .radio-mini .news { color: var(--sc); }
+.has-3d .track { display: none; } /* the flat strip is only the backup when 3D can't run */
+@media (min-width: 800px) {
+  .stage { grid-column: 1 / -1; height: 520px; }
+  .radio-mini { left: auto; top: 10px; bottom: auto; width: 300px; }
+  .radio-mini li:nth-child(n+3) { display: -webkit-box; }
+}

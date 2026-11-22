@@ -7,11 +7,13 @@ import { makeStrategist } from "./agents/strategist.js";
 import { makePlayer } from "./ui-player.js";
 import { drawFrame, makeRadio, callLine, esc } from "./ui-draw.js";
 import { makeReplay, frameOf, emptyFrame } from "./ui-replay.js";
+import { makeStage } from "./ui-stage.js";
 
 const PASS_KEY = "boxbox-passcode";
 const $ = (id) => document.getElementById(id);
 const player = makePlayer();
 const radio = makeRadio();
+const stage = makeStage(document.getElementById("stage"), player); // 3D Las Vegas view
 let race = null, brains = null, replay = null, running = false;
 
 $("laps").textContent = RULES.laps;
@@ -37,6 +39,7 @@ $("step").onclick = () => { hideBanner(); player.step(); };
 $("replay").oninput = () => showLap(+$("replay").value);
 
 drawFrame(emptyFrame());
+stage.frame(emptyFrame(), false);
 updateButtons();
 
 async function start() {
@@ -54,6 +57,7 @@ async function start() {
   running = true;
   updateButtons();
   drawFrame(frameOf(race));
+  stage.frame(frameOf(race), false);
 
   let saidOffline = false;
   while (!race.done) {
@@ -68,9 +72,11 @@ async function start() {
       radio.add(race.lap, `⚠️ Team A's AI is unavailable (${esc(ai.isOffline())}). The rule bot takes over.`, "news");
     }
     events.forEach((e) => radio.add(e.lap, callLine(e)));
-    leadChange(replay.frame(race.lap - 1), frameOf(race));
+    const newLeader = leadChange(replay.frame(race.lap - 1), frameOf(race));
     replay.record(race);
     drawFrame(frameOf(race));
+    stage.frame(frameOf(race));
+    bigMoments(news, events, newLeader);
     radio.render(race.lap);
     if (!race.done) {
       autoPause(news, events);
@@ -82,11 +88,20 @@ async function start() {
 
 // The calls above were made at the START of the lap. If the order flipped
 // DURING the lap, say so, so the radio and the tower never seem to disagree.
+// Returns the new leader's team, or null if the order didn't change.
 function leadChange(before, after) {
   const was = before.cars[0].team, now = after.cars[0].team;
-  if (was === now) return;
+  if (was === now) return null;
   const gap = (after.cars[1].time - after.cars[0].time).toFixed(2);
   radio.add(after.lap, `Lap ${after.lap} · 🔁 Team ${now} takes P1 during this lap (now ${gap}s ahead of Team ${was})`, "news");
+  return now;
+}
+
+// Big moments get a glowing word in the 3D view and a short camera close-up.
+function bigMoments(news, events, newLeader) {
+  if (news.some((n) => /SAFETY CAR deployed/.test(n.text))) stage.moment("sc", frameOf(race).cars[0].team);
+  events.filter((e) => e.call.startsWith("BOX_")).forEach((e) => stage.moment("box", e.team));
+  if (newLeader) stage.moment("overtake", newLeader);
 }
 
 // Stop and explain when something big happens (if the box is ticked).
@@ -146,6 +161,7 @@ function finish() {
 function showLap(lap) {
   $("replayLap").textContent = lap;
   drawFrame(replay.frame(lap));
+  stage.frame(replay.frame(lap), false);
   radio.render(lap);
 }
 

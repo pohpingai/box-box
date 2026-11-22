@@ -40,5 +40,6 @@ export function makePlayer() {
     step() { stepOnce = true; nudge(); },
     reset() { paused = false; stepOnce = false; nudge(); },
     isPaused: () => paused,
+    msPerLap: () => msPerLap, // the 3D view uses this to time each lap's playback
   };
 }

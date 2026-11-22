@@ -46,6 +46,14 @@ AI "brains" for each team, watch the race, and compare which brain did better.
 - `ui-draw.js` — draws one moment ("frame") and the radio feed. Radio call lines show the
   team's position at the START of the lap (what it saw when it made the call).
 - `ui-replay.js` — saves a frame after every lap for the replay slider.
+- `ui-stage.js` — loads the 3D view in the background; if it fails, the flat strip stays.
+- `three/` — the 3D Las Vegas night view (step 3.5): `view.js` (puts it together, bloom glow),
+  `track3d.js` (outline → 3D points), `ribbon.js` (glowing track), `city.js` (grid, lights,
+  buildings), `landmarks.js` (sphere, Ferris wheel), `cars.js` (dots + trails), `labels.js`
+  (pop-up words), `drone.js` (camera).
+- `track/vegas.js` — the real Las Vegas outline (from pohpingai/f1-news; f1-circuits, MIT).
+- `vendor/three/` — a copy of Three.js 0.170 (only the files we use). Don't edit; to upgrade,
+  replace the files from the npm package `three`.
 
 ## AI setup (step 2)
 - Page → Worker (`https://box-box-brain.pohping-ai.workers.dev/decide`) → OpenRouter → model.

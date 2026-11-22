@@ -85,5 +85,30 @@
 - The AI simulated on almost every lap (57 of a possible 60), even quiet ones.
 - Known limit: when Team B gets an AI brain (step 4), "rival = rule bot" is no longer true.
 
+## Step 3.5 — 3D Las Vegas night view ✅ done
+(An early taste of step 9. The engine and the brains are untouched.)
+- A 3D night view of the race above the lap counter, made with Three.js. No build step:
+  Three.js (version 0.170) is kept in the repo in `vendor/three/`, so the live site needs
+  no outside website, and the page loads it with an "import map".
+- The track is the real Las Vegas Strip Circuit, the same outline as the mini game in
+  pohpingai/f1-news (read only, not changed). Copied into `track/vegas.js` with its MIT licence.
+- The look: dark city, faint street grid, tiny city lights, box buildings with glowing gold
+  edges (about 1 in 7 purple/pink), a glowing sphere and a Ferris wheel roughly where the
+  real ones are, a glowing track ribbon (white core, red edge, blue edge), bloom glow,
+  and a drone camera that circles the city slowly (one lap every 150s).
+- Team A (teal) and Team B (orange) are glowing dots with light trails. Honest, simple
+  movement: the engine works in whole laps, so in each lap's playback the leader goes once
+  round and the other car sits behind it by the real time gap (90s = one whole lap).
+- Big moments: "SAFETY CAR" (track edges also turn yellow), "BOX BOX" (in the team's colour),
+  "OVERTAKE" (when P1 changes). A glowing word pops up over the car and the camera swoops in
+  for 2 seconds.
+- Radio: the newest messages float over the 3D view (2 on phones, 4 on wider screens).
+  The full radio card is still below.
+- Safe: if 3D can't start (old phone, a file fails to load) the page keeps the old flat strip
+  and the race works as before. "Reduce motion" setting → the camera holds still, no swoops.
+  It only draws while it's on screen (saves battery).
+- Tested in the browser at 375px and 1280px: full race on Fast, replay slider, reduced
+  motion, and the "3D failed to load" fallback. No errors.
+
 ## Next: Step 4 — Team B on another model
 Two different AI models race each other.
