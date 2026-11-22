@@ -1,7 +1,7 @@
 // three/labels.js — glowing pop-up words that float in the 3D scene above a car:
 // "SAFETY CAR", "BOX BOX", "OVERTAKE". Each one pops in, floats up a little and
 // fades out after about 2.5 seconds.
-import * as THREE from "three";
+import * as THREE from "../vendor/three/three.module.min.js";
 
 const LIFE = 2.6; // seconds on screen
 

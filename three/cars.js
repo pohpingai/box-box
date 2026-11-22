@@ -4,7 +4,7 @@
 // leader goes once round the track during each lap's playback, and the other
 // car sits behind it by its real time gap (90s gap = a whole lap behind).
 // The gap slides smoothly from the old value to the new one during the lap.
-import * as THREE from "three";
+import * as THREE from "../vendor/three/three.module.min.js";
 
 export const TEAM_COLOURS = { A: "#00d2be", B: "#ff8a00" };
 const LAP_SECONDS = 90;   // how much time one trip round the track stands for

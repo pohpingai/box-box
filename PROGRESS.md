@@ -110,5 +110,13 @@
 - Tested in the browser at 375px and 1280px: full race on Fast, replay slider, reduced
   motion, and the "3D failed to load" fallback. No errors.
 
+### Fix 3.5.1 — 3D view missing on the owner's phone
+- On the owner's phone the 3D view didn't show at all (laptop was fine). Most likely cause: the
+  page used an "import map" to find Three.js, which older phone browsers (iPhone before iOS 16.4)
+  don't understand, and the failure was hidden on purpose so the race kept working.
+- Fixes: no import map any more (files point straight at `vendor/three/`), and if 3D can't start
+  the box now says why in plain words instead of disappearing. The race still works either way.
+- Tested: iPhone/Pixel/Galaxy screen sizes, "file failed to load" and "no WebGL" cases.
+
 ## Next: Step 4 — Team B on another model
 Two different AI models race each other.

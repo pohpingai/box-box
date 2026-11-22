@@ -52,8 +52,9 @@ AI "brains" for each team, watch the race, and compare which brain did better.
   buildings), `landmarks.js` (sphere, Ferris wheel), `cars.js` (dots + trails), `labels.js`
   (pop-up words), `drone.js` (camera).
 - `track/vegas.js` — the real Las Vegas outline (from pohpingai/f1-news; f1-circuits, MIT).
-- `vendor/three/` — a copy of Three.js 0.170 (only the files we use). Don't edit; to upgrade,
-  replace the files from the npm package `three`.
+- `vendor/three/` — a copy of Three.js 0.170 (only the files we use). One change from the npm
+  package `three`: in `addons/`, `from 'three'` is rewritten to `from '../../three.module.min.js'`,
+  so no "import map" is needed (older iPhones don't support import maps). Redo that when upgrading.
 
 ## AI setup (step 2)
 - Page → Worker (`https://box-box-brain.pohping-ai.workers.dev/decide`) → OpenRouter → model.

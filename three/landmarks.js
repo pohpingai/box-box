@@ -1,6 +1,6 @@
 // three/landmarks.js — two simple Vegas landmarks, roughly where the real ones are:
 // a big glowing sphere and a Ferris wheel. Both turn slowly (see update()).
-import * as THREE from "three";
+import * as THREE from "../vendor/three/three.module.min.js";
 
 // Approximate real spots (longitude, latitude), put on the map with the track's own projector.
 const SPHERE_AT = [-115.1618, 36.1207];

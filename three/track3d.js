@@ -17,7 +17,7 @@ export function makeProjector(coords) {
 export function buildTrack(coords) {
   const project = makeProjector(coords);
   let pts = coords.map((c) => project(c));
-  const first = pts[0], last = pts.at(-1);
+  const first = pts[0], last = pts[pts.length - 1];
   if (Math.hypot(first.x - last.x, first.z - last.z) < 0.1) pts.pop(); // closed loop: drop the repeat
 
   // Round the sharpest corners a little ("corner cutting", two passes).

@@ -2,7 +2,7 @@
 // For a big moment it swoops in close to a car for 2 seconds, then flies back.
 // With "reduce motion" switched on in the phone/computer settings it holds still
 // and never swoops.
-import * as THREE from "three";
+import * as THREE from "../vendor/three/three.module.min.js";
 
 const ORBIT_SECONDS = 150; // one full circle
 const IN = 0.7, HOLD = 2, OUT = 1.2; // swoop timing (seconds)

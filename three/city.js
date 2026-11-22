@@ -2,7 +2,7 @@
 // streets, tiny city lights and simple box buildings with glowing gold edges
 // (a few purple/pink ones). The layout comes from a fixed seed, so the city
 // looks the same on every visit. (Its own random numbers: the race is untouched.)
-import * as THREE from "three";
+import * as THREE from "../vendor/three/three.module.min.js";
 import { makeRng } from "../race.js";
 
 const GOLD = [new THREE.Color(2.0, 1.25, 0.35), new THREE.Color(1.6, 0.95, 0.3)];

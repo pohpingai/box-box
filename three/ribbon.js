@@ -1,7 +1,7 @@
 // three/ribbon.js — the track as a glowing ribbon: dark tarmac, a white core,
 // a red edge on one side and a blue edge on the other. Bright colours glow
 // because of the "bloom" effect (see view.js).
-import * as THREE from "three";
+import * as THREE from "../vendor/three/three.module.min.js";
 
 // One flat strip that follows the track, from `inner` to `outer` units off the centre line.
 function strip(points, inner, outer, y, colour, opacity = 1) {

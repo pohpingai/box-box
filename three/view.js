@@ -6,11 +6,11 @@
 //   setFrame(frame, animate) — a lap has finished: move the cars to the new gaps
 //   moment(kind, team)       — "sc" / "box" / "overtake": pop-up word + close-up
 //   (it asks the page for the lap speed and pause state itself, every frame)
-import * as THREE from "three";
-import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
-import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
-import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import * as THREE from "../vendor/three/three.module.min.js";
+import { EffectComposer } from "../vendor/three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "../vendor/three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "../vendor/three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "../vendor/three/addons/postprocessing/OutputPass.js";
 import { VEGAS } from "../track/vegas.js";
 import { buildTrack } from "./track3d.js";
 import { makeRibbon } from "./ribbon.js";

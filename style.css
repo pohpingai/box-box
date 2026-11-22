@@ -118,3 +118,7 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 16px
   .radio-mini { left: auto; top: 10px; bottom: auto; width: 300px; }
   .radio-mini li:nth-child(n+3) { display: -webkit-box; }
 }
+/* If 3D can't start, the box shrinks and says why (see ui-stage.js). */
+.stage.failed { height: auto; min-height: 90px; }
+.stage.failed .stage-legend, .stage.failed .radio-mini { display: none; }
+.stage-error { margin: 40px 12px 12px; font-size: 13px; color: var(--muted); }
