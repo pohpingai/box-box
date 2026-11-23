@@ -179,5 +179,29 @@
 - Note: the ElevenLabs key can't do speech-to-text, so clarity was checked by measuring the files
   (each word shows as its own burst of sound), not by machine transcription.
 
+## Step 3.8 — Exciting music + sound effects ✅ done
+- 3 race tracks to choose from, all 135 BPM, made once with ElevenLabs Music (punchy drums, driving bass,
+  arpeggiated synths, F1-broadcast-intro energy, original): 1 = dark synthwave, 2 = electronic rock,
+  3 = cinematic orchestral + synth hybrid.
+- Each track has 3 levels: calm / building / climax. Each track was made as ONE song in sections, then
+  cut on whole bars into 3 loops (8 bars ≈ 14s each), so the levels share key, tempo and instruments.
+  The cuts were chosen by measuring each bar's loudness, brightness and busyness. Track 1's real intro
+  is a slow filter sweep that can't loop, so its calm level is its building loop, muffled the same way.
+- When the level or track changes, the new loop starts at the same point in the bar and cross-fades in
+  (1.5s), so the beat never stumbles.
+- Rules: calm by default, building when the gap is under 1s, climax in the last 3 laps (laps 18–20).
+- 🎵 Music: 1 / 2 / 3 picker next to the sound controls (remembered in this browser). Switch any time,
+  even mid-race. The label shows the track name and current level ("Electronic rock · building").
+- Sound effects (ElevenLabs Sound Effects): whoosh on a pit stop, riser + impact on an overtake (P1 changes),
+  short alarm on a safety car, crowd roar at the finish (with the finish sting).
+- The old `race-loop` / `tension-loop` music is gone (the safety car now has its alarm; the gap rule
+  usually lifts the music to "building" behind the safety car anyway).
+- ElevenLabs key quota: the key has a 5,000-credit limit. Track 3 had to be made shorter (42s instead of
+  96s), so its climax loop is 4 bars (7s) instead of 8. Remake it longer if the quota is raised.
+- Tested in the browser (375px + 1280px, seed monza, Normal speed, switching to track 2 on lap 5 and
+  track 3 on lap 10): every loop exactly 8 bars when decoded, switches keep the beat, climax from lap 18,
+  alarm + whoosh on lap 7, riser + impact on each lead change, crowd + sting at the end, no errors.
+  Engine files not changed.
+
 ## Next: Step 4 — Team B on another model
 Two different AI models race each other.

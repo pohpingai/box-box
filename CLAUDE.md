@@ -47,16 +47,21 @@ AI "brains" for each team, watch the race, and compare which brain did better.
   team's position at the START of the lap (what it saw when it made the call).
 - `ui-replay.js` — saves a frame after every lap for the replay slider.
 - `ui-stage.js` — loads the 3D view in the background; if it fails, the flat strip stays.
-- `ui-audio.js` — the sound desk: music loops (cross-fade to tension during a safety car), finish sting,
-  volume + mute. Web Audio; starts on the RUN RACE tap (phones need a tap). Fails silently.
+- `ui-audio.js` — the sound desk: loads/plays sounds, volume + mute, sound effects (pit whoosh, overtake
+  riser, safety-car alarm, finish crowd). Web Audio; starts on a tap (phones need one). Fails silently.
+- `ui-music.js` — race music: 3 tracks × calm/building/climax loops (135 BPM, whole bars). Calm default,
+  building when the gap < 1s, climax in the last 3 laps. Level/track changes stay on the beat.
 - `ui-voice.js` — the two race engineers: call → voice line, light radio filter + soft static click,
   one channel with a queue; `onSpeak(team, key)` makes the speaking team's card/car/radio line glow.
-- `audio/` — mp3s made ONCE with ElevenLabs. The site never calls ElevenLabs. Music: `race-loop`,
-  `tension-loop`, `finish`. Voices: `a-*.mp3` (Team A, driver Alex, library voice "Hugh"
+- `audio/` — mp3s made ONCE with ElevenLabs. The site never calls ElevenLabs. Music: `m{1,2,3}-{calm,building,climax}`
+  (1 synthwave, 2 electronic rock, 3 cinematic hybrid; cut from one song per track) and `finish`.
+  Sound effects: `sfx-whoosh/overtake/alarm/crowd`. Voices: `a-*.mp3` (Team A, driver Alex, library voice "Hugh"
   `2UMI2FME0FFUFMlUoRER`) and `b-*.mp3` (Team B, driver Blake, library voice "Mia" `Vufs5CYVtQ9JvjTN0Hs4`):
   `box-soft/box-medium/box-hard/stay/push/sc/p1/p2`. Every line starts with the driver's name.
   To remake one: ElevenLabs `POST /v1/music` or `/v1/text-to-speech/<voice id>`, then
-  even out loudness with ffmpeg `loudnorm`; loops get a 2s end-to-start cross-fade.
+  even out loudness with ffmpeg `loudnorm`. Music loops: make one song with a `composition_plan`
+  (3 sections), cut whole bars, and cross-fade the bar after the loop into its first half bar.
+  Sound effects: `POST /v1/sound-generation`. The key has a 5,000-credit quota — check before big jobs.
 - `three/` — the 3D Las Vegas night view (step 3.5, "hologram" look): `view.js` (puts it together,
   bloom glow, softer when the camera swoops close), `track3d.js` (outline → 3D points), `ribbon.js`
   (thin neon track line), `city.js` (endless purple grid floor, wireframe purple/gold buildings

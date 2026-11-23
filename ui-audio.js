@@ -1,24 +1,25 @@
-// ui-audio.js — the "sound desk": background music, the finish sting, and the
-// master volume / mute. Uses the browser's Web Audio API (a little mixing desk
+// ui-audio.js — the "sound desk": loads and plays sounds, master volume / mute,
+// and the sound effects. Uses the browser's Web Audio API (a little mixing desk
 // built into every browser). All sounds are mp3 files in audio/, made ONCE with
 // ElevenLabs — the page never calls ElevenLabs, so there's no key and no cost.
+// The music itself (3 tracks × 3 intensity levels) is in ui-music.js.
 //
-// Phones only allow sound after a tap, so unlock() is called from RUN RACE.
+// Phones only allow sound after a tap, so unlock() is called from a button.
 // If anything fails (old browser, file missing) the page stays silent and the
 // race works exactly as before.
 
 const VOL_KEY = "boxbox-volume", MUTE_KEY = "boxbox-mute";
-const FADE = 1.2; // seconds to cross-fade between the two music loops
+
+// Sound effects (audio/sfx-*.mp3): pit stop, overtake, safety car, finish.
+const SFX = { pit: "sfx-whoosh", overtake: "sfx-overtake", sc: "sfx-alarm", finish: "sfx-crowd" };
 
 export function makeAudio() {
-  let ctx = null, master = null, musicBus = null;
-  const buffers = {};            // name → decoded sound
-  let loops = {};                // "race"/"tension" → { src, gain } while playing
-  let current = null;            // which loop is audible
+  let ctx = null, master = null, musicBus = null, sfxBus = null;
+  const buffers = {};            // name → decoded sound (a Promise)
   let volume = +(localStorage.getItem(VOL_KEY) ?? 0.7);
   let muted = localStorage.getItem(MUTE_KEY) === "on";
 
-  // Called from a tap (RUN RACE). Creates the mixing desk the first time.
+  // Called from a tap. Creates the mixing desk the first time.
   function unlock() {
     try {
       if (!ctx) {
@@ -28,8 +29,11 @@ export function makeAudio() {
         master = ctx.createGain();
         master.connect(ctx.destination);
         musicBus = ctx.createGain();
-        musicBus.gain.value = 0.55; // music sits under the voice
+        musicBus.gain.value = 0.5; // music sits under the voices
         musicBus.connect(master);
+        sfxBus = ctx.createGain();
+        sfxBus.gain.value = 0.6;
+        sfxBus.connect(master);
         applyVolume();
       }
       if (ctx.state === "suspended") ctx.resume();
@@ -37,9 +41,9 @@ export function makeAudio() {
     } catch (e) { console.warn("audio off:", e); return false; }
   }
 
-  // Fetch + decode a file once, then reuse it. Returns null on failure.
-  async function load(name) {
-    if (!ctx) return null;
+  // Fetch + decode a file once, then reuse it. Resolves to null on failure.
+  function load(name) {
+    if (!ctx) return Promise.resolve(null);
     if (!(name in buffers)) {
       buffers[name] = fetch(`audio/${name}.mp3`)
         .then((r) => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
@@ -49,53 +53,15 @@ export function makeAudio() {
     return buffers[name];
   }
 
-  // Play a sound once through `out` (default: master). Returns when it's over.
-  async function play(name, { out = master, rate = 1 } = {}) {
+  // Play a sound once through `out` (default: master). Resolves when it's over.
+  async function play(name, { out = master } = {}) {
     const buf = await load(name);
     if (!buf) return 0;
     const src = ctx.createBufferSource();
     src.buffer = buf;
-    src.playbackRate.value = rate;
     src.connect(out);
     src.start();
     return new Promise((done) => (src.onended = () => done(buf.duration)));
-  }
-
-  // Music: "race" (calm loop) or "tension" (safety car loop). Cross-fades.
-  async function music(which) {
-    if (!ctx || current === which) return;
-    current = which;
-    const buf = await load(`${which}-loop`);
-    if (!buf || current !== which) return; // file failed, or switched again meanwhile
-    const t = ctx.currentTime;
-    for (const [name, l] of Object.entries(loops)) { // fade out the other loop
-      l.gain.gain.setTargetAtTime(0, t, FADE / 3);
-      l.src.stop(t + FADE * 2);
-      delete loops[name];
-    }
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0, t);
-    gain.gain.linearRampToValueAtTime(1, t + FADE);
-    gain.connect(musicBus);
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.loop = true; // the files were made to loop without a seam
-    src.connect(gain);
-    src.start();
-    loops[which] = { src, gain };
-  }
-
-  // Fade all music out (end of race), then play the finish sting.
-  function stopMusic(fade = 0.8) {
-    current = null;
-    if (!ctx) return;
-    const t = ctx.currentTime;
-    for (const l of Object.values(loops)) { l.gain.gain.setTargetAtTime(0, t, fade / 3); l.src.stop(t + fade * 2); }
-    loops = {};
-  }
-  async function finishSting() {
-    stopMusic();
-    return play("finish", { out: musicBus });
   }
 
   function applyVolume() {
@@ -103,8 +69,10 @@ export function makeAudio() {
   }
 
   return {
-    unlock, load, play, music, stopMusic, finishSting,
-    ctx: () => ctx, master: () => master,
+    unlock, load, play,
+    sfx(kind) { if (ctx && SFX[kind]) play(SFX[kind], { out: sfxBus }); },
+    preloadSfx() { Object.values(SFX).forEach(load); },
+    ctx: () => ctx, master: () => master, musicBus: () => musicBus,
     setVolume(v) { volume = v; localStorage.setItem(VOL_KEY, v); applyVolume(); },
     setMuted(m) { muted = m; localStorage.setItem(MUTE_KEY, m ? "on" : "off"); applyVolume(); },
     volume: () => volume, muted: () => muted,

@@ -10,13 +10,15 @@ import { makeReplay, frameOf, emptyFrame } from "./ui-replay.js";
 import { makeStage } from "./ui-stage.js";
 import { makeAudio } from "./ui-audio.js";
 import { makeVoice } from "./ui-voice.js";
+import { makeMusic, TRACKS } from "./ui-music.js";
 
 const PASS_KEY = "boxbox-passcode";
 const $ = (id) => document.getElementById(id);
 const player = makePlayer();
 const radio = makeRadio();
 const stage = makeStage(document.getElementById("stage"), player); // 3D Las Vegas view
-const audio = makeAudio();      // music + volume (ui-audio.js)
+const audio = makeAudio();      // sound desk: volume, sound effects (ui-audio.js)
+const music = makeMusic(audio); // 3 tracks × calm/building/climax (ui-music.js)
 const voice = makeVoice(audio, onSpeak); // the two race engineers (ui-voice.js)
 let race = null, brains = null, replay = null, running = false;
 
@@ -47,6 +49,16 @@ $("volume").value = audio.volume();
 $("volume").oninput = () => { audio.setVolume(+$("volume").value); if (audio.muted()) toggleMute(); };
 $("mute").onclick = toggleMute;
 $("voiceTest").onclick = () => { if (audio.unlock()) voice.test(); };
+// 🎵 Music picker: switch tracks any time, even mid-race, to compare them.
+document.querySelectorAll("[data-music]").forEach((b) => {
+  b.title = TRACKS[b.dataset.music];
+  b.onclick = () => { music.setTrack(b.dataset.music); showMusic(); };
+});
+showMusic();
+function showMusic() {
+  document.querySelectorAll("[data-music]").forEach((b) => b.classList.toggle("on", b.dataset.music === music.track()));
+  $("musicName").textContent = TRACKS[music.track()] + (music.level() ? ` · ${music.level()}` : "");
+}
 showMute();
 function toggleMute() { audio.setMuted(!audio.muted()); showMute(); }
 function showMute() {
@@ -61,7 +73,7 @@ updateButtons();
 async function start() {
   const seed = $("seed").value.trim() || "monza";
   // Sound may only start after a tap, so it's switched on here.
-  if (audio.unlock()) { voice.reset(); audio.music("race"); }
+  if (audio.unlock()) { voice.reset(); music.start(); audio.preloadSfx(); showMusic(); }
   const ai = makeStrategist({ passcode: $("passcode").value.trim(), useSim: $("simTool").checked, onThinking });
   brains = { A: ai, B: bot };
   race = createRace(seed, { A: ai.decide, B: bot.decide });
@@ -95,7 +107,7 @@ async function start() {
     drawFrame(frameOf(race));
     stage.frame(frameOf(race));
     bigMoments(news, events, newLeader);
-    sounds(news, events);
+    sounds(news, events, newLeader);
     radio.render(race.lap);
     if (!race.done) {
       autoPause(news, events);
@@ -124,9 +136,16 @@ function bigMoments(news, events, newLeader) {
 }
 
 // Music follows the safety car; each team's engineer reads out its call.
-function sounds(news, events) {
-  audio.music(frameOf(race).safetyCar ? "tension" : "race");
-  if (news.some((n) => /SAFETY CAR deployed/.test(n.text))) voice.safetyCar();
+// Music level: climax in the last 3 laps, building when the gap is under 1s, else calm.
+// Sound effects: whoosh on a pit stop, riser + impact on an overtake, alarm on a safety car.
+function sounds(news, events, newLeader) {
+  const f = frameOf(race);
+  const gap = f.cars[1].time - f.cars[0].time;
+  music.setLevel(race.lap >= RULES.laps - 2 ? "climax" : gap < 1 ? "building" : "calm");
+  showMusic();
+  if (events.some((e) => e.call.startsWith("BOX_"))) audio.sfx("pit");
+  if (newLeader) audio.sfx("overtake");
+  if (news.some((n) => /SAFETY CAR deployed/.test(n.text))) { audio.sfx("sc"); voice.safetyCar(); }
   events.forEach((e) => voice.call(e.team, e.call, `${e.lap}-${e.team}`));
 }
 
@@ -177,7 +196,11 @@ function finish() {
   hideBanner();
   updateButtons();
   const r = result(race);
-  audio.finishSting().then(() => voice.finish(r.winner));
+  // Finish: music stops, the sting plays with a crowd roar, then the engineers.
+  music.stop();
+  showMusic();
+  audio.sfx("finish");
+  audio.play("finish", { out: audio.musicBus() }).then(() => voice.finish(r.winner));
   const s = brains.A.stats;
   $("resultText").innerHTML = `
     <div class="big">Team ${r.winner} wins by ${r.margin.toFixed(2)}s</div>

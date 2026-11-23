@@ -147,3 +147,8 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 16px
   .team.speaking, .car.speaking { animation: onair 0.9s ease-in-out infinite alternate; }
   @keyframes onair { from { filter: brightness(1); } to { filter: brightness(1.25); } }
 }
+
+/* 🎵 Music picker (same look as the speed buttons). */
+.controls .music { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.music .speeds button { min-width: 36px; }
+.music button.on { background: #e10600; border-color: #e10600; font-weight: bold; }
