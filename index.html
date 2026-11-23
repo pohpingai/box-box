@@ -8,7 +8,7 @@
 </head>
 <body>
   <header>
-    <h1>BOX&nbsp;BOX <span>AI pit wall · Step 3.5</span></h1>
+    <h1>BOX&nbsp;BOX <span>AI pit wall · Step 3.6</span></h1>
     <p class="sub">You are the team boss. The brains make the calls. You watch.</p>
   </header>
 
@@ -40,6 +40,11 @@
       <input id="seed" value="monza" autocomplete="off" />
       <button id="dice" title="Random seed">🎲</button>
       <button id="run" class="go">RUN RACE</button>
+      <!-- Sound: music + Team A's radio voice (see ui-audio.js, ui-voice.js) -->
+      <div class="sound">
+        <button id="mute" aria-pressed="false" title="Mute / unmute">🔊</button>
+        <input id="volume" type="range" min="0" max="1" step="0.05" aria-label="Volume" />
+      </div>
       <div class="pass">
         <label for="passcode">AI passcode</label>
         <input id="passcode" type="password" autocomplete="off" placeholder="needed for Team A's AI" />
@@ -97,7 +102,7 @@
   </main>
 
   <footer>Same seed = same surprises. Team A: AI strategist (rule bot steps in if it fails). Team B: rule bot.<br>
-    Track outline: <a href="https://github.com/bacinger/f1-circuits">f1-circuits</a> by Tomislav Bacinger (<a href="track/LICENSE-f1-circuits.md">MIT</a>) · 3D: <a href="https://threejs.org">three.js</a> (<a href="vendor/three/LICENSE">MIT</a>)</footer>
+    Track outline: <a href="https://github.com/bacinger/f1-circuits">f1-circuits</a> by Tomislav Bacinger (<a href="track/LICENSE-f1-circuits.md">MIT</a>) · 3D: <a href="https://threejs.org">three.js</a> (<a href="vendor/three/LICENSE">MIT</a>) · Music &amp; voice: made with ElevenLabs</footer>
   <script type="module" src="ui.js"></script>
 </body>
 </html>

@@ -47,6 +47,12 @@ AI "brains" for each team, watch the race, and compare which brain did better.
   team's position at the START of the lap (what it saw when it made the call).
 - `ui-replay.js` — saves a frame after every lap for the replay slider.
 - `ui-stage.js` — loads the 3D view in the background; if it fails, the flat strip stays.
+- `ui-audio.js` — the sound desk: music loops (cross-fade to tension during a safety car), finish sting,
+  volume + mute. Web Audio; starts on the RUN RACE tap (phones need a tap). Fails silently.
+- `ui-voice.js` — Team A's race engineer: call → voice line, radio filter + static crackle, queue.
+- `audio/` — mp3s made ONCE with ElevenLabs (music + voice "Daniel"). The site never calls ElevenLabs.
+  To remake one: ElevenLabs `POST /v1/music` or `/v1/text-to-speech/onwK4e9ZLuTAKqWW03F9`, then
+  even out loudness with ffmpeg `loudnorm`; loops get a 2s end-to-start cross-fade.
 - `three/` — the 3D Las Vegas night view (step 3.5, "hologram" look): `view.js` (puts it together,
   bloom glow, softer when the camera swoops close), `track3d.js` (outline → 3D points), `ribbon.js`
   (thin neon track line), `city.js` (endless purple grid floor, wireframe purple/gold buildings

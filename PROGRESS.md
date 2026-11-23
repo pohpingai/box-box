@@ -132,5 +132,30 @@
   trails, tags no longer overlap, dome less blown out, brighter grid, fewer buildings, calmer
   close-ups). Same seed = same race. Full race on Fast at 375px, replay slider, reduced motion: no errors.
 
+## Step 3.6 — Sound ✅ done
+(An early taste of step 8's voice. The engine and the brains are untouched.)
+- Music and voice made ONCE with ElevenLabs and saved as mp3 files in `audio/` (1.4 MB in all).
+  The site never calls ElevenLabs: no key on the page, no cost per visit.
+- Music (ElevenLabs Music): `race-loop` (calm dark synthwave, 38s), `tension-loop` (faster, for the
+  safety car, 30s), `finish` (7s triumphant sting). The two loops were made seamless: the last 2s
+  fade into the start, so they repeat without a jump.
+- Voice: ElevenLabs voice "Daniel" (steady British male): "Box box, box box.", "Stay out, stay out.",
+  "Push now, push.", "Safety car, safety car.", "Mediums.", "Hards.", "Softs.", "P1! Get in there!",
+  "P2. We'll get them next time." All voice files evened out to the same loudness.
+- On the page: music starts on RUN RACE, cross-fades to the tension loop while the safety car is out
+  and back after, then the finish sting + "P1!"/"P2." for Team A at the end.
+- Team A's call → its engineer line through a "radio" filter (thin phone-like sound, a little grit)
+  with a burst of static before and after (made in the browser, no file).
+- No "Stay out" on every lap: a line plays when Team A's call CHANGES; pit stops always play.
+  Normal pace / Save tyres have no line. If the engineer is still talking, ordinary lines wait for
+  the next lap; important ones (pit stop, safety car, finish) queue up.
+- 🔊 mute button + volume slider next to RUN RACE (remembered in this browser).
+- Safe: phones only allow sound after a tap, so sound switches on with RUN RACE. If sound can't
+  start or a file is missing, the race runs silently, as before.
+- Tested in the browser (375px + 1280px, seed monza, Fast): every sound played in order (push, stay out,
+  safety car + tension music laps 7–9, box + hards, finish sting, "P2"), mute works, no errors;
+  also with all sound files missing: race finishes, no errors. Engine files not changed.
+- Known: on Fast (0.5s/lap) the radio runs a few laps behind, because a line is longer than a lap.
+
 ## Next: Step 4 — Team B on another model
 Two different AI models race each other.

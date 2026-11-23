@@ -8,12 +8,16 @@ import { makePlayer } from "./ui-player.js";
 import { drawFrame, makeRadio, callLine, esc } from "./ui-draw.js";
 import { makeReplay, frameOf, emptyFrame } from "./ui-replay.js";
 import { makeStage } from "./ui-stage.js";
+import { makeAudio } from "./ui-audio.js";
+import { makeVoice } from "./ui-voice.js";
 
 const PASS_KEY = "boxbox-passcode";
 const $ = (id) => document.getElementById(id);
 const player = makePlayer();
 const radio = makeRadio();
 const stage = makeStage(document.getElementById("stage"), player); // 3D Las Vegas view
+const audio = makeAudio();      // music + volume (ui-audio.js)
+const voice = makeVoice(audio); // Team A's race engineer (ui-voice.js)
 let race = null, brains = null, replay = null, running = false;
 
 $("laps").textContent = RULES.laps;
@@ -38,12 +42,25 @@ $("pause").onclick = () => (player.isPaused() ? resume() : pauseWith(""));
 $("step").onclick = () => { hideBanner(); player.step(); };
 $("replay").oninput = () => showLap(+$("replay").value);
 
+// ---------- Sound: mute + volume (remembered in this browser) ----------
+$("volume").value = audio.volume();
+$("volume").oninput = () => { audio.setVolume(+$("volume").value); if (audio.muted()) toggleMute(); };
+$("mute").onclick = toggleMute;
+showMute();
+function toggleMute() { audio.setMuted(!audio.muted()); showMute(); }
+function showMute() {
+  $("mute").textContent = audio.muted() ? "🔇" : "🔊";
+  $("mute").setAttribute("aria-pressed", audio.muted());
+}
+
 drawFrame(emptyFrame());
 stage.frame(emptyFrame(), false);
 updateButtons();
 
 async function start() {
   const seed = $("seed").value.trim() || "monza";
+  // Sound may only start after a tap, so it's switched on here.
+  if (audio.unlock()) { voice.reset(); audio.music("race"); }
   const ai = makeStrategist({ passcode: $("passcode").value.trim(), useSim: $("simTool").checked, onThinking });
   brains = { A: ai, B: bot };
   race = createRace(seed, { A: ai.decide, B: bot.decide });
@@ -77,6 +94,7 @@ async function start() {
     drawFrame(frameOf(race));
     stage.frame(frameOf(race));
     bigMoments(news, events, newLeader);
+    sounds(news, events);
     radio.render(race.lap);
     if (!race.done) {
       autoPause(news, events);
@@ -102,6 +120,14 @@ function bigMoments(news, events, newLeader) {
   if (news.some((n) => /SAFETY CAR deployed/.test(n.text))) stage.moment("sc", frameOf(race).cars[0].team);
   events.filter((e) => e.call.startsWith("BOX_")).forEach((e) => stage.moment("box", e.team));
   if (newLeader) stage.moment("overtake", newLeader);
+}
+
+// Music follows the safety car; Team A's engineer reads out Team A's call.
+function sounds(news, events) {
+  audio.music(frameOf(race).safetyCar ? "tension" : "race");
+  if (news.some((n) => /SAFETY CAR deployed/.test(n.text))) voice.safetyCar();
+  const a = events.find((e) => e.team === "A");
+  if (a) voice.call(a.call);
 }
 
 // Stop and explain when something big happens (if the box is ticked).
@@ -140,6 +166,7 @@ function finish() {
   hideBanner();
   updateButtons();
   const r = result(race);
+  audio.finishSting().then(() => voice.finish(r.winner === "A"));
   const s = brains.A.stats;
   $("resultText").innerHTML = `
     <div class="big">Team ${r.winner} wins by ${r.margin.toFixed(2)}s</div>
