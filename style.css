@@ -127,3 +127,23 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 16px
 .controls .sound { display: flex; align-items: center; gap: 6px; }
 .controls .sound input { flex: none; width: 90px; min-width: 0; padding: 0; accent-color: #e10600; }
 .controls #mute { padding: 6px 8px; line-height: 1; }
+
+/* Who's on the radio: the speaking team's card, car and radio line glow (ui.js onSpeak). */
+.team { position: relative; }
+.onair { display: none; position: absolute; top: -10px; right: 10px; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 10px; color: #000; }
+.team[data-team="A"] .onair { background: var(--a); } .team[data-team="B"] .onair { background: var(--b); }
+.team.speaking .onair { display: inline-block; }
+.team[data-team="A"].speaking { box-shadow: 0 0 0 1px var(--a), 0 0 18px var(--a); }
+.team[data-team="B"].speaking { box-shadow: 0 0 0 1px var(--b), 0 0 18px var(--b); }
+.car.a.speaking { box-shadow: 0 0 6px 2px var(--a), 0 0 16px var(--a); }
+.car.b.speaking { box-shadow: 0 0 6px 2px var(--b), 0 0 16px var(--b); }
+.feed li.speaking, .radio-mini li.speaking { background: rgba(255,255,255,.08); border-radius: 6px; padding-left: 6px; box-shadow: inset 3px 0 0 #fff; }
+.feed li.speaking[data-key$="-A"], .radio-mini li.speaking[data-key$="-A"] { box-shadow: inset 3px 0 0 var(--a), 0 0 12px rgba(0,210,190,.35); }
+.feed li.speaking[data-key$="-B"], .radio-mini li.speaking[data-key$="-B"] { box-shadow: inset 3px 0 0 var(--b), 0 0 12px rgba(255,138,0,.35); }
+.stage-onair { position: absolute; top: 48px; left: 12px; z-index: 2; font-size: 12px; font-weight: bold; padding: 3px 8px; border-radius: 12px; color: #000; }
+.stage-onair.ta { background: var(--a); box-shadow: 0 0 12px var(--a); } .stage-onair.tb { background: var(--b); box-shadow: 0 0 12px var(--b); }
+.stage-onair.hidden { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .team.speaking, .car.speaking { animation: onair 0.9s ease-in-out infinite alternate; }
+  @keyframes onair { from { filter: brightness(1); } to { filter: brightness(1.25); } }
+}

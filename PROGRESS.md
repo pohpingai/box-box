@@ -157,5 +157,27 @@
   also with all sound files missing: race finishes, no errors. Engine files not changed.
 - Known: on Fast (0.5s/lap) the radio runs a few laps behind, because a line is longer than a lap.
 
+## Step 3.7 — Two engineers with names ✅ done
+- New voices, picked from the ElevenLabs voice library by their labels (conversational, not narration):
+  - Team A → driver **Alex**, engineer **Hugh** (calm, confident British male; "calm authority and
+    conversational warmth", made for lifelike agent conversations).
+  - Team B → driver **Blake**, engineer **Mia** (energetic Australian female; "bright, upbeat …
+    energetic and friendly", conversational delivery).
+  - Also tried: Archer, Marcus (A); Kailey, Milly (B). Kailey measured flat and quiet, the opposite of energetic.
+- 16 lines (8 per team), every line starts with the driver's name: "Alex, box box. Mediums.",
+  "Blake, push now, push!" … Box + tyre is now ONE file per tyre. Old `v-*.mp3` files deleted.
+- Much lighter radio effect: only the deepest rumble and the highest hiss are trimmed, no distortion,
+  and the static click is quieter. Voices stay crisp.
+- Both teams talk now (one radio channel, one voice at a time). Safety car: both engineers. Finish:
+  the winner's engineer says "P1! Get in there!", then the other says "P2. We'll get them next time."
+- While an engineer talks: that team's card, its car (flat strip AND the 3D car's ground glow, pulsing)
+  and its radio line glow, with a "📻 Team A" badge on the card and on the 3D view.
+- 🎧 Voice test button: plays one line from each team.
+- Tested in the browser (375px + 1280px): voice test lights A then B; full monza race: both safety-car
+  lines, both pit calls with the right radio line lit, "P1" for the winner then "P2", no errors.
+  Engine files not changed.
+- Note: the ElevenLabs key can't do speech-to-text, so clarity was checked by measuring the files
+  (each word shows as its own burst of sound), not by machine transcription.
+
 ## Next: Step 4 — Team B on another model
 Two different AI models race each other.

@@ -22,8 +22,9 @@ export function makeCars(track) {
     const body = carShape(c);
     const trail = makeTrail(c);
     group.add(body, trail);
-    cars[team] = { body, trail, s: 0 };
+    cars[team] = { body, trail, s: 0, pool: body.userData.pool };
   }
+  let speaking = null; // the team whose engineer is on the radio: its glow pool pulses
 
   // Lap playback state.
   let from = { A: 0, B: 0 }, to = { A: 0, B: 0 }; // how far behind the leader (share of a lap)
@@ -55,9 +56,15 @@ export function makeCars(track) {
         const off = from[team] + (to[team] - from[team]) * e;
         const s = (moving ? p : 0) - off;
         place(cars[team], s);
+        // On the radio: the glow under the car grows and pulses.
+        const pulse = team === speaking ? 0.5 + 0.5 * Math.sin(performance.now() / 110) : -1;
+        const pool = cars[team].pool;
+        pool.material.opacity = pulse < 0 ? 0.12 : 0.3 + 0.3 * pulse;
+        pool.scale.set(pulse < 0 ? 1.6 : 2.6, 1, pulse < 0 ? 1 : 1.6);
       }
     },
     position(team) { return cars[team].body.position; },
+    setSpeaking(team) { speaking = team; },
   };
 
   function current() {
@@ -113,6 +120,7 @@ function carShape(c) {
   pool.position.y = 0.05;
   pool.scale.set(1.6, 1, 1); // stretched along the car
   g.add(pool);
+  g.userData.pool = pool;
   g.scale.setScalar(SCALE);
   return g;
 }

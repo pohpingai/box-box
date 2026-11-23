@@ -44,20 +44,27 @@ function drawTrack(cars) {
 // ---------- Radio ----------
 // Every message is kept with its lap number, so the replay slider can
 // show the radio exactly as it was at any lap.
+// key (optional) names a call line, e.g. "7-A", so it can glow while its
+// engineer is speaking (see highlight).
 export function makeRadio() {
-  let items = [];
+  let items = [], lit = null;
   return {
     clear() { items = []; render(0); },
-    add(lap, html, cls = "") { items.push({ lap, html, cls }); },
+    add(lap, html, cls = "", key = "") { items.push({ lap, html, cls, key }); },
     render,
+    highlight(key) { lit = key || null; mark(); },
   };
+  function li(m) { return `<li class="${m.cls}" data-key="${m.key}">${m.html}</li>`; }
   function render(upToLap) {
     const shown = items.filter((m) => m.lap <= upToLap).reverse(); // newest on top
-    $("feed").innerHTML = shown.length
-      ? shown.map((m) => `<li class="${m.cls}">${m.html}</li>`).join("")
-      : '<li class="muted">Press RUN RACE to start.</li>';
+    $("feed").innerHTML = shown.length ? shown.map(li).join("") : '<li class="muted">Press RUN RACE to start.</li>';
     // The small radio overlay on the 3D view: just the newest few messages.
-    $("radioMini").innerHTML = shown.slice(0, 4).map((m) => `<li class="${m.cls}">${m.html}</li>`).join("");
+    $("radioMini").innerHTML = shown.slice(0, 4).map(li).join("");
+    mark();
+  }
+  function mark() {
+    document.querySelectorAll("#feed li, #radioMini li").forEach((el) =>
+      el.classList.toggle("speaking", !!lit && el.dataset.key === lit));
   }
 }
 

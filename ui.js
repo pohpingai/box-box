@@ -17,7 +17,7 @@ const player = makePlayer();
 const radio = makeRadio();
 const stage = makeStage(document.getElementById("stage"), player); // 3D Las Vegas view
 const audio = makeAudio();      // music + volume (ui-audio.js)
-const voice = makeVoice(audio); // Team A's race engineer (ui-voice.js)
+const voice = makeVoice(audio, onSpeak); // the two race engineers (ui-voice.js)
 let race = null, brains = null, replay = null, running = false;
 
 $("laps").textContent = RULES.laps;
@@ -46,6 +46,7 @@ $("replay").oninput = () => showLap(+$("replay").value);
 $("volume").value = audio.volume();
 $("volume").oninput = () => { audio.setVolume(+$("volume").value); if (audio.muted()) toggleMute(); };
 $("mute").onclick = toggleMute;
+$("voiceTest").onclick = () => { if (audio.unlock()) voice.test(); };
 showMute();
 function toggleMute() { audio.setMuted(!audio.muted()); showMute(); }
 function showMute() {
@@ -88,7 +89,7 @@ async function start() {
       saidOffline = true;
       radio.add(race.lap, `⚠️ Team A's AI is unavailable (${esc(ai.isOffline())}). The rule bot takes over.`, "news");
     }
-    events.forEach((e) => radio.add(e.lap, callLine(e)));
+    events.forEach((e) => radio.add(e.lap, callLine(e), "", `${e.lap}-${e.team}`));
     const newLeader = leadChange(replay.frame(race.lap - 1), frameOf(race));
     replay.record(race);
     drawFrame(frameOf(race));
@@ -122,12 +123,22 @@ function bigMoments(news, events, newLeader) {
   if (newLeader) stage.moment("overtake", newLeader);
 }
 
-// Music follows the safety car; Team A's engineer reads out Team A's call.
+// Music follows the safety car; each team's engineer reads out its call.
 function sounds(news, events) {
   audio.music(frameOf(race).safetyCar ? "tension" : "race");
   if (news.some((n) => /SAFETY CAR deployed/.test(n.text))) voice.safetyCar();
-  const a = events.find((e) => e.team === "A");
-  if (a) voice.call(a.call);
+  events.forEach((e) => voice.call(e.team, e.call, `${e.lap}-${e.team}`));
+}
+
+// While an engineer talks, that team's card, car and radio line glow,
+// with a "📻 Team A" badge. team = null when the radio goes quiet.
+function onSpeak(team, key) {
+  document.querySelectorAll(".team[data-team]").forEach((c) => c.classList.toggle("speaking", c.dataset.team === team));
+  for (const t of ["A", "B"]) $("car" + t).classList.toggle("speaking", t === team);
+  $("onAir").textContent = team ? `📻 Team ${team}` : "";
+  $("onAir").className = `stage-onair ${team ? "t" + team.toLowerCase() : "hidden"}`;
+  radio.highlight(team ? key : null);
+  stage.speaking(team);
 }
 
 // Stop and explain when something big happens (if the box is ticked).
@@ -166,7 +177,7 @@ function finish() {
   hideBanner();
   updateButtons();
   const r = result(race);
-  audio.finishSting().then(() => voice.finish(r.winner === "A"));
+  audio.finishSting().then(() => voice.finish(r.winner));
   const s = brains.A.stats;
   $("resultText").innerHTML = `
     <div class="big">Team ${r.winner} wins by ${r.margin.toFixed(2)}s</div>

@@ -49,9 +49,13 @@ AI "brains" for each team, watch the race, and compare which brain did better.
 - `ui-stage.js` — loads the 3D view in the background; if it fails, the flat strip stays.
 - `ui-audio.js` — the sound desk: music loops (cross-fade to tension during a safety car), finish sting,
   volume + mute. Web Audio; starts on the RUN RACE tap (phones need a tap). Fails silently.
-- `ui-voice.js` — Team A's race engineer: call → voice line, radio filter + static crackle, queue.
-- `audio/` — mp3s made ONCE with ElevenLabs (music + voice "Daniel"). The site never calls ElevenLabs.
-  To remake one: ElevenLabs `POST /v1/music` or `/v1/text-to-speech/onwK4e9ZLuTAKqWW03F9`, then
+- `ui-voice.js` — the two race engineers: call → voice line, light radio filter + soft static click,
+  one channel with a queue; `onSpeak(team, key)` makes the speaking team's card/car/radio line glow.
+- `audio/` — mp3s made ONCE with ElevenLabs. The site never calls ElevenLabs. Music: `race-loop`,
+  `tension-loop`, `finish`. Voices: `a-*.mp3` (Team A, driver Alex, library voice "Hugh"
+  `2UMI2FME0FFUFMlUoRER`) and `b-*.mp3` (Team B, driver Blake, library voice "Mia" `Vufs5CYVtQ9JvjTN0Hs4`):
+  `box-soft/box-medium/box-hard/stay/push/sc/p1/p2`. Every line starts with the driver's name.
+  To remake one: ElevenLabs `POST /v1/music` or `/v1/text-to-speech/<voice id>`, then
   even out loudness with ffmpeg `loudnorm`; loops get a 2s end-to-start cross-fade.
 - `three/` — the 3D Las Vegas night view (step 3.5, "hologram" look): `view.js` (puts it together,
   bloom glow, softer when the camera swoops close), `track3d.js` (outline → 3D points), `ribbon.js`

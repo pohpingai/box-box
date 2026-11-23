@@ -31,6 +31,8 @@ export function makeStage(host, player) {
       last = f;
       view?.setFrame(f, animate);
     },
+    // Make a team's car glow while its engineer is talking (null = nobody).
+    speaking(team) { view?.speaking(team); },
     // "sc", "box" or "overtake", for team "A" or "B".
     moment(kind, team) {
       view?.moment(kind, team); // (skipped if the 3D view isn't ready yet)

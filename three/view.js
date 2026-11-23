@@ -104,6 +104,7 @@ export function makeView(host, { getMsPerLap, isPaused }) {
       ribbon.userData.setSafetyCar(frame.safetyCar);
       tags.setCalls(frame.calls);
     },
+    speaking(team) { cars.setSpeaking(team); },
     moment(kind, team) {
       const w = WORDS[kind];
       if (!w) return;
