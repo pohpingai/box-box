@@ -11,6 +11,8 @@ export function frameOf(race) {
     lap,
     safetyCar: on(s.safetyCar),
     rain: on(s.rain),
+    // Each team's call for this lap (shown on the tags above the 3D cars).
+    calls: Object.fromEntries(race.events.filter((e) => e.lap === lap).map((e) => [e.team, e.call])),
     cars: standings(race).map(({ team, compound, tyre, mode, time, stops }) => ({ team, compound, tyre, mode, time, stops })),
   };
 }
@@ -18,7 +20,7 @@ export function frameOf(race) {
 // The picture before any race has run.
 export function emptyFrame() {
   return {
-    lap: 0, safetyCar: false, rain: false,
+    lap: 0, safetyCar: false, rain: false, calls: {},
     cars: ["A", "B"].map((team) => ({ team, compound: RULES.startCompound[team], tyre: 100, mode: "normal", time: 0, stops: 0 })),
   };
 }

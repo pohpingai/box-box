@@ -47,10 +47,13 @@ AI "brains" for each team, watch the race, and compare which brain did better.
   team's position at the START of the lap (what it saw when it made the call).
 - `ui-replay.js` — saves a frame after every lap for the replay slider.
 - `ui-stage.js` — loads the 3D view in the background; if it fails, the flat strip stays.
-- `three/` — the 3D Las Vegas night view (step 3.5): `view.js` (puts it together, bloom glow),
-  `track3d.js` (outline → 3D points), `ribbon.js` (glowing track), `city.js` (grid, lights,
-  buildings), `landmarks.js` (sphere, Ferris wheel), `cars.js` (dots + trails), `labels.js`
-  (pop-up words), `drone.js` (camera).
+- `three/` — the 3D Las Vegas night view (step 3.5, "hologram" look): `view.js` (puts it together,
+  bloom glow, softer when the camera swoops close), `track3d.js` (outline → 3D points), `ribbon.js`
+  (thin neon track line), `city.js` (endless purple grid floor, wireframe purple/gold buildings
+  inside the circuit, light posts, trees), `landmarks.js` (wireframe dome + Ferris wheel),
+  `cars.js` (small car shapes + long light trails), `tags.js` (floating "A · BOX MEDIUMS" call tag
+  above each car — reads `frame.calls` from `ui-replay.js`), `labels.js` (pop-up words),
+  `drone.js` (camera).
 - `track/vegas.js` — the real Las Vegas outline (from pohpingai/f1-news; f1-circuits, MIT).
 - `vendor/three/` — a copy of Three.js 0.170 (only the files we use). One change from the npm
   package `three`: in `addons/`, `from 'three'` is rewritten to `from '../../three.module.min.js'`,

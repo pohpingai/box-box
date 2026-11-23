@@ -1,9 +1,11 @@
 // three/view.js — the 3D Las Vegas night view. Puts the pieces together:
-// city + landmarks + glowing track + cars + pop-up words + drone camera,
+// a hologram-style city (purple grid, wireframe buildings) + landmarks + neon
+// track + cars with light trails + call tags + pop-up words + drone camera,
 // and the "bloom" effect that makes bright things glow.
 //
 // The page talks to it with three calls:
 //   setFrame(frame, animate) — a lap has finished: move the cars to the new gaps
+//                              and show each team's latest call on its tag
 //   moment(kind, team)       — "sc" / "box" / "overtake": pop-up word + close-up
 //   (it asks the page for the lap speed and pause state itself, every frame)
 import * as THREE from "../vendor/three/three.module.min.js";
@@ -15,9 +17,10 @@ import { VEGAS } from "../track/vegas.js";
 import { buildTrack } from "./track3d.js";
 import { makeRibbon } from "./ribbon.js";
 import { makeCity } from "./city.js";
-import { makeLandmarks } from "./landmarks.js";
+import { makeLandmarks, landmarkSpots } from "./landmarks.js";
 import { makeCars, TEAM_COLOURS } from "./cars.js";
 import { makeLabels } from "./labels.js";
+import { makeTags } from "./tags.js";
 import { makeDrone } from "./drone.js";
 
 const WORDS = {
@@ -34,32 +37,36 @@ export function makeView(host, { getMsPerLap, isPaused }) {
   host.prepend(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x020308);
-  scene.fog = new THREE.FogExp2(0x020308, 0.0042);
+  scene.background = new THREE.Color(0x000000);
+  scene.fog = new THREE.FogExp2(0x000000, 0.0026); // far grid lines fade away: the floor looks endless
   const camera = new THREE.PerspectiveCamera(45, 1, 0.5, 2000);
 
   const track = buildTrack(VEGAS.coords);
+  track.landmarkSpots = landmarkSpots(track); // the city keeps clear of them
   const ribbon = makeRibbon(track);
   const landmarks = makeLandmarks(track);
   const cars = makeCars(track);
   const labels = makeLabels();
-  scene.add(makeCity(track), ribbon, landmarks, cars.group, labels.group);
+  const tags = makeTags(["A", "B"], TEAM_COLOURS);
+  tags.setCalls({});
+  scene.add(makeCity(track), ribbon, landmarks, cars.group, tags.group, labels.group);
   const drone = makeDrone(camera, track, reduceMotion);
 
   // Bloom: anything bright gets a soft glow round it.
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.8, 0.45, 0.25);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.9, 0.4, 0.55);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
 
+  let baseBloom = 0.9;
   // Keep the picture the size of its box (phone rotation, window resize).
   function resize() {
     const w = host.clientWidth, h = host.clientHeight;
     if (!w || !h) return;
     renderer.setSize(w, h, false);
     composer.setSize(w, h);
-    bloom.strength = w < 600 ? 0.55 : 0.8; // small screens: gentler glow, or close-ups wash out
+    baseBloom = w < 600 ? 0.7 : 0.9; // small screens: gentler glow
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
   }
@@ -81,7 +88,10 @@ export function makeView(host, { getMsPerLap, isPaused }) {
     cars.update(lapClock);
     landmarks.userData.update(t);
     labels.update(dt);
+    tags.update(cars.position, camera.aspect);
     drone.update(dt, camera.aspect);
+    // Close up, the neon fills the screen: turn the glow down so it doesn't wash out.
+    bloom.strength = baseBloom * (1 - 0.65 * drone.closeness());
     composer.render();
   });
 
@@ -92,6 +102,7 @@ export function makeView(host, { getMsPerLap, isPaused }) {
       playing = animate;
       cars.update(lapClock);
       ribbon.userData.setSafetyCar(frame.safetyCar);
+      tags.setCalls(frame.calls);
     },
     moment(kind, team) {
       const w = WORDS[kind];

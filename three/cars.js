@@ -1,4 +1,5 @@
-// three/cars.js — Team A and Team B as glowing dots with light trails.
+// three/cars.js — Team A and Team B as small glowing race cars, each with a
+// long light trail behind it (teal for A, orange for B).
 //
 // How they move (honest, simple): the race engine works in whole laps, so the
 // leader goes once round the track during each lap's playback, and the other
@@ -6,31 +7,22 @@
 // The gap slides smoothly from the old value to the new one during the lap.
 import * as THREE from "../vendor/three/three.module.min.js";
 
-export const TEAM_COLOURS = { A: "#00d2be", B: "#ff8a00" };
-const LAP_SECONDS = 90;   // how much time one trip round the track stands for
-const TRAIL = 36;         // points in each light trail
-const TRAIL_LENGTH = 0.05; // trail length, as a share of the lap
+export const TEAM_COLOURS = { A: "#00e0c6", B: "#ffa020" };
+const LAP_SECONDS = 90;    // how much time one trip round the track stands for
+const TRAIL = 120;         // points in each light trail
+const TRAIL_LENGTH = 0.2;  // trail length, as a share of the lap
+const TRAIL_WIDTH = 1.5;   // trail width right behind the car
+const SCALE = 2.4;         // car size (1 = about 4 metres long)
 
 export function makeCars(track) {
   const group = new THREE.Group();
   const cars = {};
   for (const team of ["A", "B"]) {
-    const c = new THREE.Color(TEAM_COLOURS[team]).multiplyScalar(1.5);
-    const dot = new THREE.Mesh(new THREE.SphereGeometry(1.3, 20, 14), new THREE.MeshBasicMaterial({ color: c, toneMapped: false }));
-    const halo = new THREE.Mesh(new THREE.SphereGeometry(2.4, 20, 14), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.18, toneMapped: false, depthWrite: false }));
-    dot.add(halo);
-
-    const pos = new Float32Array(TRAIL * 3), col = new Float32Array(TRAIL * 3);
-    for (let i = 0; i < TRAIL; i++) {
-      const k = (1 - i / TRAIL) ** 1.6; // bright at the car, fading behind it
-      col.set([c.r * k, c.g * k, c.b * k], i * 3);
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
-    const trail = new THREE.Line(g, new THREE.LineBasicMaterial({ vertexColors: true, toneMapped: false, transparent: true, blending: THREE.AdditiveBlending }));
-    group.add(dot, trail);
-    cars[team] = { dot, trail, s: 0 };
+    const c = new THREE.Color(TEAM_COLOURS[team]);
+    const body = carShape(c);
+    const trail = makeTrail(c);
+    group.add(body, trail);
+    cars[team] = { body, trail, s: 0 };
   }
 
   // Lap playback state.
@@ -65,7 +57,7 @@ export function makeCars(track) {
         place(cars[team], s);
       }
     },
-    position(team) { return cars[team].dot.position; },
+    position(team) { return cars[team].body.position; },
   };
 
   function current() {
@@ -77,14 +69,77 @@ export function makeCars(track) {
   function place(car, s) {
     car.s = s;
     const p = track.pointAt(s);
-    car.dot.position.set(p.x, 1.4, p.z);
+    car.body.position.set(p.x, 0.1, p.z);
+    car.body.rotation.y = -Math.atan2(p.dz, p.dx); // nose points along the track
+
+    // The trail: a flat glowing strip along the track behind the car, thinning out.
     const arr = car.trail.geometry.attributes.position.array;
     for (let i = 0; i < TRAIL; i++) {
-      const q = track.pointAt(s - (i / TRAIL) * TRAIL_LENGTH);
-      arr.set([q.x, 1.0, q.z], i * 3);
+      const q = track.pointAt(s - 0.002 - (i / (TRAIL - 1)) * TRAIL_LENGTH);
+      const w = (TRAIL_WIDTH / 2) * (1 - i / TRAIL) ** 0.6;
+      const nx = -q.dz, nz = q.dx;
+      arr.set([q.x + nx * w, 0.12, q.z + nz * w, q.x - nx * w, 0.12, q.z - nz * w], i * 6);
     }
     car.trail.geometry.attributes.position.needsUpdate = true;
+    car.trail.geometry.computeBoundingSphere();
   }
+}
+
+// A tiny low-poly F1 car, built from boxes along the +x direction (nose at +x):
+// a glowing team-colour body, a white cockpit, dark wheels, front and rear wings,
+// and a soft glow on the ground underneath.
+function carShape(c) {
+  const g = new THREE.Group();
+  const glow = c.clone().multiplyScalar(1.15);
+  const mat = (col, extra = {}) => new THREE.MeshBasicMaterial({ color: col, toneMapped: false, ...extra });
+  const box = (w, h, d, x, y, z, m) => {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+    b.position.set(x, y, z);
+    g.add(b);
+  };
+  const bodyM = mat(glow), whiteM = mat(new THREE.Color(1.3, 1.3, 1.4)), darkM = mat(0x0b0b14);
+  box(2.6, 0.32, 0.55, 0, 0.32, 0, bodyM);      // main body
+  box(1.0, 0.18, 0.3, 1.7, 0.26, 0, bodyM);     // nose
+  box(0.22, 0.06, 1.5, 2.2, 0.18, 0, whiteM);   // front wing
+  box(0.25, 0.4, 1.3, -1.35, 0.6, 0, bodyM);    // rear wing
+  box(1.1, 0.22, 1.1, -0.2, 0.3, 0, bodyM);     // side pods
+  box(0.45, 0.18, 0.32, 0.35, 0.55, 0, whiteM); // cockpit / halo
+  for (const [x, z] of [[1.15, 0.62], [1.15, -0.62], [-0.9, 0.66], [-0.9, -0.66]]) box(0.5, 0.42, 0.28, x, 0.26, z, darkM);
+  // Glow pool on the ground under the car.
+  const pool = new THREE.Mesh(new THREE.CircleGeometry(1.8, 24), mat(c.clone().multiplyScalar(1.2), {
+    transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false,
+  }));
+  pool.rotation.x = -Math.PI / 2;
+  pool.position.y = 0.05;
+  pool.scale.set(1.6, 1, 1); // stretched along the car
+  g.add(pool);
+  g.scale.setScalar(SCALE);
+  return g;
+}
+
+// The light trail: a strip of TRAIL pairs of points, bright and white-hot
+// right behind the car, fading to nothing at the far end.
+function makeTrail(c) {
+  const bright = c.clone().multiplyScalar(1.6);
+  const pos = new Float32Array(TRAIL * 6), col = new Float32Array(TRAIL * 6), idx = [];
+  for (let i = 0; i < TRAIL; i++) {
+    const k = (1 - i / TRAIL) ** 1.4;
+    const hot = Math.max(0, 1 - i / 8) * 0.8; // a white-hot start
+    const r = (bright.r + hot) * k, g = (bright.g + hot) * k, b = (bright.b + hot) * k;
+    col.set([r, g, b, r, g, b], i * 6);
+    if (i < TRAIL - 1) {
+      const a = i * 2;
+      idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  geo.setIndex(idx);
+  return new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+    vertexColors: true, toneMapped: false, transparent: true, side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  }));
 }
 
 function ease(t) { return t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2; }

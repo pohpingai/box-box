@@ -118,5 +118,19 @@
   the box now says why in plain words instead of disappearing. The race still works either way.
 - Tested: iPhone/Pixel/Galaxy screen sizes, "file failed to load" and "no WebGL" cases.
 
+### Redesign 3.5.2 — "hologram" look (matches the owner's reference picture)
+- Replaced the random gold boxes completely. Now: an endless black floor with a faint purple grid;
+  buildings drawn as glowing wireframes (edges and window lines only) in purple and gold, packed
+  inside the circuit with a few tall tapered towers; a gold wireframe geodesic dome and Ferris wheel;
+  light posts along the track and little gold trees.
+- Track: a thin glowing purple-white neon line (same real Las Vegas layout).
+- Cars: small glowing car shapes with long light trails (teal A, orange B).
+- New: a floating hologram tag above each car with its current call, e.g. "A · BOX MEDIUMS".
+  It also follows the replay slider.
+- Glow (bloom) is turned down automatically during camera close-ups so they don't wash out.
+- Tested: screenshots compared with the reference picture and improved once (bigger cars, longer
+  trails, tags no longer overlap, dome less blown out, brighter grid, fewer buildings, calmer
+  close-ups). Same seed = same race. Full race on Fast at 375px, replay slider, reduced motion: no errors.
+
 ## Next: Step 4 — Team B on another model
 Two different AI models race each other.

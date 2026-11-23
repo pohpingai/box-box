@@ -9,12 +9,15 @@ const IN = 0.7, HOLD = 2, OUT = 1.2; // swoop timing (seconds)
 
 export function makeDrone(camera, track, reduceMotion) {
   let angle = 0.6, focus = null; // focus = { follow(), age }
+  let close = 0; // 0 = high orbit, 1 = fully swooped in
   const centre = new THREE.Vector3(0, 0, 0);
   const orbitPos = new THREE.Vector3(), closePos = new THREE.Vector3();
   const look = new THREE.Vector3(), target = new THREE.Vector3();
 
   return {
     // follow() = where the car is right now.
+    // How close the camera is right now (0..1). The glow is turned down when close.
+    closeness: () => close,
     closeUp(follow) {
       if (reduceMotion) return;
       // Already close? Just switch car and restart the 2 seconds, no jump back out.
@@ -40,6 +43,7 @@ export function makeDrone(camera, track, reduceMotion) {
         closePos.set(car.x + back.x * d, d * 0.75, car.z + back.z * d);
         if (focus.age > IN + HOLD + OUT) focus = null;
       }
+      close = w;
       camera.position.lerpVectors(orbitPos, closePos, w);
       look.lerpVectors(centre, target, w);
       camera.lookAt(look);
