@@ -1,5 +1,6 @@
 // three/floor.js — the ground: a dark, glossy floor that faintly mirrors the
-// neon above it (like wet tarmac at night), with a faint purple grid on top.
+// neon above it (like wet tarmac at night), with a faint purple grid on top
+// and small glowing dots where the grid lines cross.
 //
 // How the mirror works: a second, hidden camera looks UP from under the floor
 // and draws the scene into a small picture, which is laid on the floor. That
@@ -22,11 +23,18 @@ export function makeFloor(track, { small }) {
   mirror.rotation.x = -Math.PI / 2;
   g.add(mirror);
 
-  const grid = new THREE.GridHelper(size, Math.round(size / 12), 0x4a2490, 0x2e1660);
+  const grid = new THREE.GridHelper(size, Math.round(size / 12), 0x8040e0, 0x6030b0);
   grid.position.y = 0.01;
   grid.material.transparent = true;
-  grid.material.opacity = 0.45; // fainter than before: the reflections are the star now
+  grid.material.opacity = 0.35;
   g.add(grid);
+
+  // Small purple dots where the grid lines cross (evenly spaced, like a hologram table).
+  const pos = [], step = size / Math.round(size / 12), half = track.radius * 5;
+  for (let x = -half; x <= half; x += step) for (let z = -half; z <= half; z += step) pos.push(x, 0.05, z);
+  const dots = new THREE.BufferGeometry();
+  dots.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.add(new THREE.Points(dots, new THREE.PointsMaterial({ color: new THREE.Color(0.8, 0.35, 1.4), size: 0.6, toneMapped: false })));
 
   // Things that shouldn't show in the mirror (the floating call tags and pop-up
   // words: mirrored text just looks like a glitch). Hidden only while the

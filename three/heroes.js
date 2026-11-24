@@ -29,13 +29,6 @@ export function heroSpots() {
   }));
 }
 
-// The point the camera circles and looks at: halfway along the row (near the
-// tower), a little above the ground, nudged towards the dome so it stays in shot.
-export function heroCentre() {
-  const [dome, tower] = heroSpots();
-  return new THREE.Vector3((dome.x + tower.x) / 2, 18, (dome.z * 0.4 + tower.z * 0.6));
-}
-
 // Glow levels. Blender's settings are very bright (strength 3–5). Too bright and
 // the tone mapping + bloom bleach gold and purple to white, so we turn them down
 // to a level where they still glow but keep their colour.

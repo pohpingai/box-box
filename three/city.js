@@ -1,152 +1,142 @@
-// three/city.js — the "hologram" city: buildings drawn as glowing WIREFRAMES (edges + window lines
-// only, no solid walls), in purple and gold. Only about 30, all inside the
-// circuit and mostly round the landmarks, so the landmarks stand out.
-// Small light posts stand at even spacing along both edges of the track.
-// (The floor is in floor.js.)
+// three/city.js — the city, built from the owner's Blender kit (models/kit.glb):
+// tall towers, medium blocks, wide blocks, curvy buildings, trees and light posts.
+//
+//   - Downtown: a dense cluster of tall + medium buildings behind the dome
+//     (round the twisted tower and in the band north of it), each a little
+//     taller or shorter (height × 0.8–1.4) and turned a different way.
+//   - Islands: wide + curvy buildings standing on their own round platforms
+//     near the landmarks, with trees round them.
+//   - Light posts at even spacing along both edges of the track.
+//   - Nothing (except the posts) closer than 40 m to the track.
+//
+// Fast on phones: every kit piece is drawn as ONE "instanced" mesh — the
+// computer draws all 20 towers in one go instead of 20 times.
 // The layout comes from a fixed seed, so the city looks the same on every
 // visit. (Its own random numbers: the race is untouched.)
 import * as THREE from "../vendor/three/three.module.min.js";
+import { GLTFLoader } from "../vendor/three/addons/loaders/GLTFLoader.js";
 import { makeRng } from "../race.js";
 
-// Bright colours (above 1) glow through the "bloom" effect.
-const PURPLE = new THREE.Color(0.62, 0.26, 1.25);
-const GOLD = new THREE.Color(1.15, 0.7, 0.22);
+export const KIT_SCALE = 1.3;   // kit pieces shown 1.3x their Blender size (the landmarks are 2x)
+export const CLEAR = 4;         // keep 4 units (40 m) between buildings/trees and the track's centre line
+const POST_EVERY = 12;          // a light post every 12 track points (6 units = 60 m)
+const POST_SIDE = 2.1;          // posts stand 2.1 units from the centre line (just off the road edge)
+
+// How much ground each piece covers (its round platform, or the tree's crown), in Blender units.
+const FOOT = { Kit_TallTower: 3.27, Kit_MediumBlock: 3.97, Kit_WideBlock: 5.77, Kit_CurvyBuilding: 5.97, Kit_Tree: 0.65 };
+
+// ---------- Where everything goes (pure maths, no 3D: tested in Node) ----------
+export function cityLayout(track) {
+  const rng = makeRng("vegas-kit");
+  const P = track.points, spots = track.landmarkSpots;
+  const placed = []; // { kind, x, z, turn, s, sy, r }
+
+  const trackDist = (x, z) => {
+    let d = Infinity;
+    for (const p of P) d = Math.min(d, (p.x - x) ** 2 + (p.z - z) ** 2);
+    return Math.sqrt(d);
+  };
+  // Does a circle of radius r at (x, z) fit? Inside the loop, 40 m off the track,
+  // off the landmarks, and not on top of another piece (`gap` = how close they may get).
+  const fits = (x, z, r, gap = 0.6) =>
+    insideLoop(P, x, z) && trackDist(x, z) - r >= CLEAR &&
+    !spots.some((s) => Math.hypot(s.x - x, s.z - z) < s.r + r) &&
+    !placed.some((o) => Math.hypot(o.x - x, o.z - z) < o.r + r + gap);
+  const add = (kind, x, z, s, sy = 1) => {
+    const p = { kind, x, z, turn: rng() * Math.PI * 2, s, sy, r: FOOT[kind] * s };
+    placed.push(p);
+    return p;
+  };
+
+  const [dome, tower, wheel] = spots;
+  // 1) Downtown (first, so it gets the room it needs): behind the dome — round the twisted tower and the band north of it.
+  //    Tall towers in the middle of the cluster, medium blocks round the edge.
+  const centre = { x: tower.x, z: tower.z - 14 };
+  let built = 0;
+  for (let tries = 0; tries < 6000 && built < 26; tries++) {
+    const x = centre.x + (rng() - 0.5) * 70, z = centre.z + (rng() - 0.5) * 50;
+    if (z > dome.z - dome.r) continue; // stay behind the dome
+    const middle = Math.hypot((x - centre.x) / 35, (z - centre.z) / 25) < 0.55;
+    const kind = rng() < (middle ? 0.6 : 0.3) ? "Kit_TallTower" : "Kit_MediumBlock";
+    const s = KIT_SCALE * (0.72 + rng() * 0.2);
+    if (fits(x, z, FOOT[kind] * s, -0.4)) { add(kind, x, z, s, 0.8 + rng() * 0.6); built++; }
+  }
+  // A few trees tucked into downtown's gaps.
+  for (let n = 0, tries = 0; n < 18 && tries < 3000; tries++) {
+    const x = centre.x + (rng() - 0.5) * 80, z = centre.z + (rng() - 0.5) * 60, s = 1 + rng() * 0.5;
+    if (z < dome.z - dome.r && fits(x, z, FOOT.Kit_Tree * s, 0.3)) { add("Kit_Tree", x, z, s); n++; }
+  }
+
+  // 2) Islands: wide and curvy buildings near the landmarks, with trees round each.
+  const islands = [];
+  for (let tries = 0; tries < 4000 && islands.length < 6; tries++) {
+    const kind = islands.length % 2 ? "Kit_WideBlock" : "Kit_CurvyBuilding";
+    const near = [dome, wheel, tower][islands.length % 3];
+    const a = rng() * Math.PI * 2, d = near.r + 3 + rng() * 40;
+    const x = near.x + Math.cos(a) * d, z = near.z + Math.sin(a) * d;
+    if (fits(x, z, FOOT[kind] * KIT_SCALE * 0.85, 2)) islands.push(add(kind, x, z, KIT_SCALE * 0.85));
+  }
+  for (const isl of islands) {
+    for (let n = 0, tries = 0; n < 6 && tries < 60; tries++) {
+      const a = rng() * Math.PI * 2, d = isl.r + 0.8 + rng() * 3;
+      const x = isl.x + Math.cos(a) * d, z = isl.z + Math.sin(a) * d, s = 1.1 + rng() * 0.5;
+      if (fits(x, z, FOOT.Kit_Tree * s, 0.2)) { add("Kit_Tree", x, z, s); n++; }
+    }
+  }
+
+  // 3) Light posts on both road edges, evenly spaced (the only things near the track).
+  P.forEach((p, i) => {
+    if (i % POST_EVERY) return;
+    for (const side of [-1, 1]) {
+      placed.push({ kind: "Kit_LightPost", x: p.x + p.nx * POST_SIDE * side, z: p.z + p.nz * POST_SIDE * side, turn: 0, s: 0.6, sy: 1, r: 0 });
+    }
+  });
+  return placed;
+}
+
+// ---------- The 3D part ----------
+// Glow levels (Blender's 3–5 bleach to white under the bloom, as with the landmarks).
+const GLOW = { HD_Gold_Edge: 1.1, HD_Gold_Rim: 1.0, HD_Gold_Joint: 1.6, HT_Edge_Purple: 1.4, KIT_Window: 0.8 };
 
 export function makeCity(track) {
-  const rng = makeRng("vegas-city");
   const group = new THREE.Group();
-
-  // Is (x, z) too close to the track? Buildings stay off it.
-  const near = (x, z, d) => track.points.some((p, i) => i % 3 === 0 && (p.x - x) ** 2 + (p.z - z) ** 2 < d * d);
-  const inside = (x, z) => insideLoop(track.points, x, z);
-  // Keep clear of the landmarks (dome, twisted tower, Ferris wheel — see heroes.js).
-  const clear = (x, z, r) => !track.landmarkSpots.some((s) => Math.hypot(s.x - x, s.z - z) < s.r + r);
-
-  const boxes = layout(rng, track, near, inside, clear);
-  group.add(wireframes(boxes));
-  group.add(windowFill(boxes));
-  group.add(lightPosts(track));
+  group.name = "city";
+  const layout = cityLayout(track);
+  const url = new URL("../models/kit.glb", import.meta.url).href;
+  group.userData.ready = new GLTFLoader().loadAsync(url).then((gltf) => {
+    for (const kit of gltf.scene.children) {
+      const items = layout.filter((p) => p.kind === kit.name);
+      if (!items.length) continue;
+      // Each kit piece sits at its own spot in the Blender file: use it as if at 0,0,0.
+      kit.position.set(0, 0, 0);
+      kit.updateMatrixWorld(true);
+      kit.traverse((part) => {
+        if (part.isMesh) group.add(instanced(part, items));
+      });
+    }
+    return group;
+  }).catch((e) => {
+    console.warn("City kit (kit.glb) didn't load:", e);
+    return null;
+  });
   return group;
 }
 
-// Where the buildings go: only INSIDE the loop, and only about 30, so the
-// landmarks stand out. Most cluster round the landmarks (like a downtown
-// around them); a few are spread through the rest of the infield.
-const BUILDINGS = 30;
-function layout(rng, track, near, inside, clear) {
-  const boxes = [];
-  const R = track.radius;
-  const spots = track.landmarkSpots;
-  const fits = (b) => clear(b.x, b.z, Math.max(b.w, b.d) / 2 + 1) &&
-    !boxes.some((o) => Math.abs(o.x - b.x) < (o.w + b.w) / 2 + 1.6 && Math.abs(o.z - b.z) < (o.d + b.d) / 2 + 1.6);
-
-  for (let tries = 0; tries < 5000 && boxes.length < BUILDINGS; tries++) {
-    let x, z, nearLandmark = rng() < 0.75;
-    if (nearLandmark) {
-      // A spot in a ring just outside one of the landmarks.
-      const s = spots[Math.floor(rng() * spots.length)], a = rng() * Math.PI * 2, d = s.r + 2 + rng() * 16;
-      x = s.x + Math.cos(a) * d; z = s.z + Math.sin(a) * d;
-    } else {
-      x = (rng() - 0.5) * R * 1.4; z = (rng() - 0.5) * R * 2.1;
-    }
-    const w = 2.5 + rng() * 5, d = 2.5 + rng() * 5;
-    if (!inside(x, z) || near(x, z, Math.max(w, d) / 2 + 3)) continue;
-    // Next to a landmark: a bit taller, a few true towers. Elsewhere: low blocks.
-    const h = nearLandmark ? 4 + rng() * (rng() < 0.2 ? 26 : 12) : 2 + rng() * 6;
-    const b = { x, z, w, d, h, gold: rng() < 0.35, tower: h > 20 };
-    if (fits(b)) boxes.push(b);
-  }
-  return boxes;
-}
-
-// All the glowing lines of all the buildings, in one go (one draw = fast on phones):
-// the 12 box edges, window bands every 1.6 units of height, and a few
-// vertical lines on each face. Towers taper towards the top.
-function wireframes(boxes) {
-  const pos = [], col = [];
-  const line = (a, b, c, ka, kb) => {
-    pos.push(...a, ...b);
-    col.push(c.r * ka, c.g * ka, c.b * ka, c.r * kb, c.g * kb, c.b * kb);
-  };
-  for (const b of boxes) {
-    const c = b.gold ? GOLD : PURPLE;
-    const taper = b.tower ? 0.7 : 1; // the top is a bit narrower than the bottom
-    const corners = (y) => {
-      const s = 1 - (1 - taper) * (y / b.h);
-      const hw = (b.w / 2) * s, hd = (b.d / 2) * s;
-      return [[b.x - hw, y, b.z - hd], [b.x + hw, y, b.z - hd], [b.x + hw, y, b.z + hd], [b.x - hw, y, b.z + hd]];
-    };
-    const bright = (y) => 0.35 + 0.65 * (y / b.h); // tops brightest, bottoms fade into the dark
-    const bottom = corners(0), top = corners(b.h);
-    for (let i = 0; i < 4; i++) {
-      const j = (i + 1) % 4;
-      line(bottom[i], bottom[j], c, 0.3, 0.3);
-      line(top[i], top[j], c, 1.1, 1.1);
-      line(bottom[i], top[i], c, 0.3, 1.1);
-    }
-    // Window bands (one per floor).
-    for (let y = 1.6; y < b.h - 0.4; y += 1.6) {
-      const ring = corners(y), k = bright(y) * 0.55;
-      for (let i = 0; i < 4; i++) line(ring[i], ring[(i + 1) % 4], c, k, k);
-    }
-    // Vertical window lines on each face.
-    const cols = Math.max(1, Math.round(Math.max(b.w, b.d) / 1.6));
-    for (let i = 0; i < 4; i++) {
-      const j = (i + 1) % 4;
-      for (let n = 1; n < cols; n++) {
-        const u = n / cols;
-        const lerp = (p, q) => p.map((v, k) => v + (q[k] - v) * u);
-        line(lerp(bottom[i], bottom[j]), lerp(top[i], top[j]), c, 0.12, 0.45);
-      }
-    }
-    // A spire on the tallest towers.
-    if (b.h > 30) line([b.x, b.h, b.z], [b.x, b.h + 8, b.z], c, 1.4, 1.4);
-  }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-  g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
-  return new THREE.LineSegments(g, new THREE.LineBasicMaterial({ vertexColors: true, toneMapped: false }));
-}
-
-// A very faint see-through tint inside each building, like lit glass,
-// so the wireframes read as solid shapes rather than a tangle of lines.
-function windowFill(boxes) {
-  const mesh = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.035, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }),
-    boxes.length,
-  );
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion();
-  boxes.forEach((b, i) => {
-    const s = b.tower ? 0.85 : 1;
-    m.compose(new THREE.Vector3(b.x, b.h / 2, b.z), q, new THREE.Vector3(b.w * s, b.h, b.d * s));
-    mesh.setMatrixAt(i, m);
-    mesh.setColorAt(i, b.gold ? GOLD : PURPLE);
+// One kit part (e.g. "tall tower's glass") drawn at every spot in `items` at once.
+function instanced(part, items) {
+  const m = part.material;
+  if (GLOW[m.name] !== undefined) m.emissiveIntensity = GLOW[m.name];
+  if (m.name === "KIT_Glass") m.opacity = 0.3; // see-through enough that the purple lines show
+  if (m.transparent) m.depthWrite = false;
+  const mesh = new THREE.InstancedMesh(part.geometry, m, items.length);
+  const mat = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
+  items.forEach((p, i) => {
+    q.setFromAxisAngle(up, p.turn);
+    mat.compose(new THREE.Vector3(p.x, 0, p.z), q, new THREE.Vector3(p.s, p.s * p.sy, p.s));
+    mesh.setMatrixAt(i, mat.multiply(part.matrixWorld)); // part's own offset inside the kit piece
   });
+  mesh.computeBoundingSphere();
   return mesh;
-}
-
-// Small light posts at even spacing (every 60 m) along both edges of the road:
-// a short purple stem with a soft white-purple light on top.
-const POST_EVERY = 12; // track points (0.5 units each) → 6 units = 60 m
-function lightPosts(track) {
-  const stems = [], tops = [];
-  track.points.forEach((p, i) => {
-    if (i % POST_EVERY) return;
-    for (const side of [-1, 1]) {
-      const x = p.x + p.nx * 2.1 * side, z = p.z + p.nz * 2.1 * side;
-      stems.push(x, 0, z, x, 1.1, z);
-      tops.push(x, 1.15, z);
-    }
-  });
-  const g = new THREE.Group();
-  const sg = new THREE.BufferGeometry();
-  sg.setAttribute("position", new THREE.Float32BufferAttribute(stems, 3));
-  g.add(new THREE.LineSegments(sg, new THREE.LineBasicMaterial({ color: new THREE.Color(0.5, 0.25, 0.95), toneMapped: false, transparent: true, opacity: 0.6 })));
-  const tg = new THREE.BufferGeometry();
-  tg.setAttribute("position", new THREE.Float32BufferAttribute(tops, 3));
-  g.add(new THREE.Points(tg, new THREE.PointsMaterial({ color: new THREE.Color(1.1, 0.8, 1.4), size: 0.45, toneMapped: false })));
-  return g;
 }
 
 // Is the point (x, z) inside the track loop? ("Ray casting": count how many

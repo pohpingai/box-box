@@ -252,5 +252,20 @@
 - Faint purple fog for depth (the sky is the same deep purple, so the horizon melts away).
 - Tested: same race results on 8 seeds (engine untouched); browser race at 1280px and 375px, no 3D errors.
 
+## Extra: city kit + closer to the target picture
+- Black night sky and black fog (the purple fog made everything murky). Purple grid back, with small
+  glowing dots evenly at every crossing.
+- Track: a bright neon tube — brighter, wider purple edges, the road surface glows, a wider soft halo,
+  and a stronger, wider bloom.
+- Camera: lower (25° down) and further back, so the whole circuit loops round the city, still circling slowly.
+- City now built from the owner's Blender kit (`models/kit.glb`); all old code-made boxes and trees removed:
+  - Downtown: 26 tall and medium buildings packed behind the dome round the twisted tower, each a bit
+    taller or shorter (0.8–1.4x) and turned a different way.
+  - 5 wide and curvy buildings on their own little round islands near the landmarks, trees round each.
+  - 48 trees, 208 light posts (every 60 m on both edges of the road).
+  - Nothing except the posts comes closer than 40 m to the track (closest: 42 m, checked against
+    `exports/track.json`). Each kit part is drawn as one "instanced" mesh, so it stays fast on phones.
+- Tested: same race results on 8 seeds (engine untouched); browser race at 1280px and 375px, no 3D errors.
+
 ## Next: Step 4 — Team B on another model
 Two different AI models race each other.
