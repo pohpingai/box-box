@@ -209,5 +209,23 @@
   (1 unit = 10 m, x = east, z = south, y = up; flat track so y = 0). Made by
   `node exports/make-track-json.js`, which reuses `three/track3d.js` (no copy).
 
+## Extra: Blender landmarks + colour-true glow
+- The owner's Blender model `models/heroes.glb` (geodesic dome, twisted tower, Ferris wheel) now stands
+  in the 3D view, loaded with GLTFLoader (`three/heroes.js`). The three keep their spacing from Blender;
+  the whole row was only moved and turned as one piece:
+  - **Dome** in the middle of the infield (0, 0) — the camera circles that spot and always looks at it.
+  - **Tower** 250 m north-north-west of it, so from the opening camera view it rises just behind the dome.
+  - **Wheel** 500 m along the same line, off to the side.
+  - Closest any part gets to the track's centre line: 80 m (dome platform). Checked vertex by vertex
+    against `exports/track.json`.
+- The old code-made dome and Ferris wheel are gone (`three/landmarks.js` removed). Three city towers
+  that stood where the new landmarks are now make room; everything else in the city is unchanged.
+- Glow re-tuned so colours stay true: ACES tone mapping kept (AgX was tried and turned more of the neon
+  white), bloom only on really bright things (threshold 0.55 → 0.8) and gentler (0.9 → 0.6). Bright
+  "washed-white" pixels fell from about 70% to 45% (most of what's left is the track's deliberately
+  white-hot centre line and the tag text). Blender's glow strengths (3–5) are turned down in `heroes.js`.
+- Tested: same race results as before on 8 seeds (engine untouched); browser race at 1280px and 375px,
+  no 3D errors.
+
 ## Next: Step 4 — Team B on another model
 Two different AI models race each other.

@@ -20,7 +20,7 @@ export function makeCity(track) {
   // Is (x, z) too close to the track? Buildings stay off it.
   const near = (x, z, d) => track.points.some((p, i) => i % 3 === 0 && (p.x - x) ** 2 + (p.z - z) ** 2 < d * d);
   const inside = (x, z) => insideLoop(track.points, x, z);
-  // Keep clear of the two landmarks (the Sphere and the Ferris wheel).
+  // Keep clear of the landmarks (dome, twisted tower, Ferris wheel — see heroes.js).
   const clear = (x, z, r) => !track.landmarkSpots.some((s) => Math.hypot(s.x - x, s.z - z) < s.r + r);
 
   const boxes = layout(rng, track, near, inside, clear);

@@ -65,14 +65,22 @@ AI "brains" for each team, watch the race, and compare which brain did better.
 - `three/` — the 3D Las Vegas night view (step 3.5, "hologram" look): `view.js` (puts it together,
   bloom glow, softer when the camera swoops close), `track3d.js` (outline → 3D points), `ribbon.js`
   (thin neon track line), `city.js` (endless purple grid floor, wireframe purple/gold buildings
-  inside the circuit, light posts, trees), `landmarks.js` (wireframe dome + Ferris wheel),
+  inside the circuit, light posts, trees; keeps clear of the landmarks), `heroes.js` (loads
+  `models/heroes.glb` and places it — see below),
   `cars.js` (small car shapes + long light trails), `tags.js` (floating "A · BOX MEDIUMS" call tag
   above each car — reads `frame.calls` from `ui-replay.js`), `labels.js` (pop-up words),
   `drone.js` (camera).
+- `models/heroes.glb` — the landmarks, made in Blender by the owner (1 unit = 10 m): geodesic dome, twisted
+  tower, Ferris wheel, in a row (0 / 25 / 50 units along). Loaded with GLTFLoader and placed as ONE piece
+  (the row is never rearranged): dome at the infield centre (0, 0), row turned 110° so it points
+  north-north-west → tower (-8.6, -23.5), wheel (-17.1, -47.0). Every part is ≥ 8 units (80 m) from the
+  track centre line. Glow levels are toned down in `heroes.js` (Blender's 3–5 bleached to white).
+- Bloom: ACES tone mapping, UnrealBloomPass strength 0.6 (phones 0.48), radius 0.4, threshold 0.8 —
+  tuned so purple stays purple and gold stays gold. (AgX was tried: it whitened far more.)
 - `exports/track.json` — the 3D view's track centre line as `[x, y, z]` points (scene units); remake with
   `node exports/make-track-json.js` after changing the track.
 - `track/vegas.js` — the real Las Vegas outline (from pohpingai/f1-news; f1-circuits, MIT).
-- `vendor/three/` — a copy of Three.js 0.170 (only the files we use). One change from the npm
+- `vendor/three/` — a copy of Three.js 0.170 (only the files we use: postprocessing, GLTFLoader + BufferGeometryUtils). One change from the npm
   package `three`: in `addons/`, `from 'three'` is rewritten to `from '../../three.module.min.js'`,
   so no "import map" is needed (older iPhones don't support import maps). Redo that when upgrading.
 

@@ -1,5 +1,6 @@
 // three/view.js — the 3D Las Vegas night view. Puts the pieces together:
-// a hologram-style city (purple grid, wireframe buildings) + landmarks + neon
+// a hologram-style city (purple grid, wireframe buildings) + the Blender-made
+// landmarks (dome, twisted tower, Ferris wheel — see heroes.js) + neon
 // track + cars with light trails + call tags + pop-up words + drone camera,
 // and the "bloom" effect that makes bright things glow.
 //
@@ -17,11 +18,13 @@ import { VEGAS } from "../track/vegas.js";
 import { buildTrack } from "./track3d.js";
 import { makeRibbon } from "./ribbon.js";
 import { makeCity } from "./city.js";
-import { makeLandmarks, landmarkSpots } from "./landmarks.js";
+import { addHeroes, heroSpots } from "./heroes.js";
 import { makeCars, TEAM_COLOURS } from "./cars.js";
 import { makeLabels } from "./labels.js";
 import { makeTags } from "./tags.js";
 import { makeDrone } from "./drone.js";
+
+const BLOOM = 0.6; // glow strength on a big screen
 
 const WORDS = {
   sc: { text: "SAFETY CAR", colour: "#ffd400" },
@@ -33,6 +36,8 @@ export function makeView(host, { getMsPerLap, isPaused }) {
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)); // sharper costs battery; 1.5 is plenty with the glow
+  // ACES "tone mapping" squeezes very bright light into what a screen can show.
+  // (We tried AgX too: it turned far more of the neon white. ACES keeps the colour.)
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   host.prepend(renderer.domElement);
 
@@ -42,31 +47,33 @@ export function makeView(host, { getMsPerLap, isPaused }) {
   const camera = new THREE.PerspectiveCamera(45, 1, 0.5, 2000);
 
   const track = buildTrack(VEGAS.coords);
-  track.landmarkSpots = landmarkSpots(track); // the city keeps clear of them
+  track.landmarkSpots = heroSpots(); // the city keeps clear of the landmarks
   const ribbon = makeRibbon(track);
-  const landmarks = makeLandmarks(track);
   const cars = makeCars(track);
   const labels = makeLabels();
   const tags = makeTags(["A", "B"], TEAM_COLOURS);
   tags.setCalls({});
-  scene.add(makeCity(track), ribbon, landmarks, cars.group, tags.group, labels.group);
+  scene.add(makeCity(track), ribbon, cars.group, tags.group, labels.group);
+  addHeroes(scene); // loads in the background; appears when ready
   const drone = makeDrone(camera, track, reduceMotion);
 
-  // Bloom: anything bright gets a soft glow round it.
+  // Bloom: anything bright gets a soft glow round it. Tuned so purple stays
+  // purple and gold stays gold: only really bright things glow (threshold 0.8),
+  // and gently (0.6) — a stronger, wider glow piles up and turns white.
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.9, 0.4, 0.55);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), BLOOM, 0.4, 0.8);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
 
-  let baseBloom = 0.9;
+  let baseBloom = BLOOM;
   // Keep the picture the size of its box (phone rotation, window resize).
   function resize() {
     const w = host.clientWidth, h = host.clientHeight;
     if (!w || !h) return;
     renderer.setSize(w, h, false);
     composer.setSize(w, h);
-    baseBloom = w < 600 ? 0.7 : 0.9; // small screens: gentler glow
+    baseBloom = w < 600 ? BLOOM * 0.8 : BLOOM; // small screens: gentler glow
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
   }
@@ -83,10 +90,8 @@ export function makeView(host, { getMsPerLap, isPaused }) {
   renderer.setAnimationLoop(() => {
     const dt = Math.min(clock.getDelta(), 0.1);
     if (!visible) return;
-    const t = clock.elapsedTime;
     if (playing && !isPaused()) lapClock = Math.min(1, lapClock + (dt * 1000) / getMsPerLap());
     cars.update(lapClock);
-    landmarks.userData.update(t);
     labels.update(dt);
     tags.update(cars.position, camera.aspect);
     drone.update(dt, camera.aspect);
