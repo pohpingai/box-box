@@ -69,6 +69,8 @@ AI "brains" for each team, watch the race, and compare which brain did better.
   `cars.js` (small car shapes + long light trails), `tags.js` (floating "A · BOX MEDIUMS" call tag
   above each car — reads `frame.calls` from `ui-replay.js`), `labels.js` (pop-up words),
   `drone.js` (camera).
+- `exports/track.json` — the 3D view's track centre line as `[x, y, z]` points (scene units); remake with
+  `node exports/make-track-json.js` after changing the track.
 - `track/vegas.js` — the real Las Vegas outline (from pohpingai/f1-news; f1-circuits, MIT).
 - `vendor/three/` — a copy of Three.js 0.170 (only the files we use). One change from the npm
   package `three`: in `addons/`, `from 'three'` is rewritten to `from '../../three.module.min.js'`,

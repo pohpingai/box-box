@@ -203,5 +203,11 @@
   alarm + whoosh on lap 7, riser + impact on each lead change, crowd + sting at the end, no errors.
   Engine files not changed.
 
+## Extra: track export
+- `exports/track.json` — the Las Vegas centre line used by the 3D view: 1,243 `[x, y, z]` points,
+  5 m apart, in driving order (point 0 = start/finish). Same units and directions as the 3D scene
+  (1 unit = 10 m, x = east, z = south, y = up; flat track so y = 0). Made by
+  `node exports/make-track-json.js`, which reuses `three/track3d.js` (no copy).
+
 ## Next: Step 4 — Team B on another model
 Two different AI models race each other.
