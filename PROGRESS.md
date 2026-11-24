@@ -267,5 +267,18 @@
     `exports/track.json`). Each kit part is drawn as one "instanced" mesh, so it stays fast on phones.
 - Tested: same race results on 8 seeds (engine untouched); browser race at 1280px and 375px, no 3D errors.
 
+## Extra: composition and scale
+- Landmarks resized one by one: dome 1.3x (was 2x), twisted tower 1.3x wide and 1.5x tall (630 m, was
+  840 m), Ferris wheel still 2x. They stay on the same spots; each is at least 160 m from the track.
+- City kit now 2x, so downtown is a real skyline: up to 12 skyscrapers (340–700 m) plus medium blocks,
+  all behind the twisted tower so the view from the dome to the tower stays open.
+- Infield filled: islands of wide/curvy buildings, then a fill pass of small blocks and ~330 trees, so
+  little bare floor shows. Still nothing (except light posts) within 40 m of the track.
+- Glass is now fairly solid and glowing, so building faces read as lit purple panels, not hatching.
+- Ground: smaller, dimmer dots; the grid and dots fade out with distance. The dome is kept out of the
+  floor mirror (its gold rings made an orange blob under it); the mirror is dimmer overall.
+- Camera closer (180 instead of 200), so the diorama fills most of the view.
+- Tested: same race results on 8 seeds (engine untouched); browser race at 1280px and 375px, no 3D errors.
+
 ## Next: Step 4 — Team B on another model
 Two different AI models race each other.

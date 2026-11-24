@@ -60,7 +60,8 @@ export function makeView(host, { getMsPerLap, isPaused }) {
   const floor = makeFloor(track, { small: Math.min(innerWidth, innerHeight) < 600 });
   scene.add(floor, makeCity(track), ribbon, cars.group, tags.group, labels.group);
   floor.userData.skipInMirror(tags.group, labels.group);
-  addHeroes(scene); // loads in the background; appears when ready
+  // Keep the dome out of the mirror: its gold rings made an orange blob on the floor under it.
+  addHeroes(scene).userData.ready.then((h) => h && floor.userData.skipInMirror(...h.userData.dome)); // loads in the background; appears when ready
   // The camera circles the whole circuit, aimed a little towards the landmarks.
   const drone = makeDrone(camera, track, reduceMotion, new THREE.Vector3(-6, 8, 8));
 

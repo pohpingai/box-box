@@ -1,6 +1,6 @@
 // three/floor.js — the ground: a dark, glossy floor that faintly mirrors the
 // neon above it (like wet tarmac at night), with a faint purple grid on top
-// and small glowing dots where the grid lines cross.
+// and small dots where the grid lines cross, both fading out with distance.
 //
 // How the mirror works: a second, hidden camera looks UP from under the floor
 // and draws the scene into a small picture, which is laid on the floor. That
@@ -10,7 +10,7 @@
 import * as THREE from "../vendor/three/three.module.min.js";
 import { Reflector } from "../vendor/three/addons/objects/Reflector.js";
 
-const REFLECT = new THREE.Color().setRGB(0.3, 0.24, 0.4); // how much light the floor gives back (purple-tinted)
+const REFLECT = new THREE.Color().setRGB(0.16, 0.12, 0.22); // how much light the floor gives back (purple-tinted)
 
 export function makeFloor(track, { small }) {
   const g = new THREE.Group();
@@ -23,18 +23,7 @@ export function makeFloor(track, { small }) {
   mirror.rotation.x = -Math.PI / 2;
   g.add(mirror);
 
-  const grid = new THREE.GridHelper(size, Math.round(size / 12), 0x8040e0, 0x6030b0);
-  grid.position.y = 0.01;
-  grid.material.transparent = true;
-  grid.material.opacity = 0.35;
-  g.add(grid);
-
-  // Small purple dots where the grid lines cross (evenly spaced, like a hologram table).
-  const pos = [], step = size / Math.round(size / 12), half = track.radius * 5;
-  for (let x = -half; x <= half; x += step) for (let z = -half; z <= half; z += step) pos.push(x, 0.05, z);
-  const dots = new THREE.BufferGeometry();
-  dots.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-  g.add(new THREE.Points(dots, new THREE.PointsMaterial({ color: new THREE.Color(0.8, 0.35, 1.4), size: 0.6, toneMapped: false })));
+  g.add(gridAndDots(track));
 
   // Things that shouldn't show in the mirror (the floating call tags and pop-up
   // words: mirrored text just looks like a glitch). Hidden only while the
@@ -90,3 +79,38 @@ const GLOSSY = {
       #include <fog_fragment>
     }`,
 };
+
+// The purple grid and the small dots where its lines cross. Both fade out with
+// distance from the middle of the circuit, so the floor melts into the dark
+// instead of ending in a hard edge. (Each line is cut into short pieces so
+// every piece can have its own brightness.)
+const STEP = 12;
+function gridAndDots(track) {
+  const half = Math.round((track.radius * 3) / STEP) * STEP;
+  const LINE = new THREE.Color(0.2, 0.09, 0.4), DOT = new THREE.Color(0.7, 0.3, 1.2);
+  const fade = (x, z) => Math.max(0, 1 - Math.hypot(x, z) / half) ** 1.6;
+  const lp = [], lc = [], dp = [], dc = [];
+  const seg = (x1, z1, x2, z2) => {
+    lp.push(x1, 0.01, z1, x2, 0.01, z2);
+    for (const [x, z] of [[x1, z1], [x2, z2]]) { const k = fade(x, z); lc.push(LINE.r * k, LINE.g * k, LINE.b * k); }
+  };
+  for (let a = -half; a <= half; a += STEP) {
+    for (let b = -half; b < half; b += STEP) { seg(a, b, a, b + STEP); seg(b, a, b + STEP, a); }
+  }
+  for (let x = -half; x <= half; x += STEP) for (let z = -half; z <= half; z += STEP) {
+    const k = fade(x, z);
+    if (k <= 0) continue;
+    dp.push(x, 0.05, z);
+    dc.push(DOT.r * k, DOT.g * k, DOT.b * k);
+  }
+  const group = new THREE.Group();
+  const lg = new THREE.BufferGeometry();
+  lg.setAttribute("position", new THREE.Float32BufferAttribute(lp, 3));
+  lg.setAttribute("color", new THREE.Float32BufferAttribute(lc, 3));
+  group.add(new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ vertexColors: true, toneMapped: false })));
+  const dg = new THREE.BufferGeometry();
+  dg.setAttribute("position", new THREE.Float32BufferAttribute(dp, 3));
+  dg.setAttribute("color", new THREE.Float32BufferAttribute(dc, 3));
+  group.add(new THREE.Points(dg, new THREE.PointsMaterial({ vertexColors: true, size: 0.35, toneMapped: false })));
+  return group;
+}

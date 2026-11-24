@@ -9,7 +9,7 @@ import * as THREE from "../vendor/three/three.module.min.js";
 const ORBIT_SECONDS = 150; // one full circle
 const IN = 0.7, HOLD = 2, OUT = 1.2; // swoop timing (seconds)
 const DOWN = (25 * Math.PI) / 180;    // how steeply the camera looks down
-const RANGE = 200;                    // camera's distance from what it looks at (units, 1 = 10 m)
+const RANGE = 180;                    // camera's distance from what it looks at (units, 1 = 10 m)
 
 export function makeDrone(camera, track, reduceMotion, centre) {
   let angle = 0.6, focus = null; // focus = { follow(), age }

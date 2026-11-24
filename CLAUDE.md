@@ -66,28 +66,32 @@ AI "brains" for each team, watch the race, and compare which brain did better.
   bloom glow, black sky + faint black fog, softer when the camera swoops close), `track3d.js` (outline → 3D points),
   `ribbon.js` (purple neon road: 30 m, bright purple edges, glowing surface, wide soft haze), `floor.js`
   (dark glossy mirror floor via three's Reflector at ½ screen size (¼ on phones), dimmed + fogged,
-  purple grid + glowing dots at the crossings; tags/labels hidden from the mirror), `city.js` (the city from
+  purple grid + small dots at the crossings, both fading out with distance; tags/labels and the dome hidden
+  from the mirror), `city.js` (the city from
   `models/kit.glb` — see below), `heroes.js` (loads
   `models/heroes.glb` and places it — see below),
   `cars.js` (small car shapes + long light trails), `tags.js` (floating "A · BOX MEDIUMS" call tag
   above each car — reads `frame.calls` from `ui-replay.js`), `labels.js` (pop-up words),
-  `drone.js` (camera: low "diorama" view, 25° down, 200 units from (-6, 8, 8), whole circuit in view, slow orbit;
+  `drone.js` (camera: low "diorama" view, 25° down, 180 units from (-6, 8, 8), whole circuit in view, slow orbit;
   phones 1.45x further).
   Cars drive in lanes (A left, B right) so the teal and orange trails never overlap into white.
 - `models/heroes.glb` — the landmarks, made in Blender by the owner (1 unit = 10 m): geodesic dome, twisted
-  tower, Ferris wheel, in a row (0 / 25 / 50 units along). Loaded with GLTFLoader and placed as ONE piece
-  (the row is never rearranged), shown at 2x size. At 2x only the wide south of the infield has room:
-  dome at (-17, 55), row turned 90° to point north → tower (-17, 5), wheel (-17, -45). Every part is
-  ≥ 10 units (100 m) from the track centre line. Glow levels are toned down in `heroes.js` (Blender's 3–5
-  bleached to white); the tower's glass is made very clear (opacity 0.12) so its purple lines show.
+  tower, Ferris wheel, in a row (0 / 25 / 50 units along). Loaded with GLTFLoader; the row is turned 90° to
+  point north with its gaps stretched 2x: dome (-17, 55), tower (-17, 5), wheel (-17, -45). Each has its own
+  size (`PARTS` in `heroes.js`): dome + its platform 1.3x, tower 1.3x wide / 1.5x tall (63 units), wheel 2x.
+  Every part is ≥ 16 units (160 m) from the track centre line. Glow levels are toned down in `heroes.js`
+  (Blender's 3–5 bleached to white); the tower's glass is very clear (opacity 0.12) so its purple lines show.
 - `models/kit.glb` — the owner's Blender city kit: 6 pieces (Kit_TallTower, Kit_MediumBlock, Kit_WideBlock,
   Kit_CurvyBuilding, Kit_Tree, Kit_LightPost), each a group sitting at its own row spot in the file (reset to
-  0,0,0 before use). `city.js` places copies at 1.3x (landmarks are 2x): `cityLayout(track)` is pure maths
-  (testable in Node, own seed "vegas-kit"); each kit part is ONE InstancedMesh (≈30 draw calls in total).
-  Downtown (first): 26 tall/medium buildings behind the dome round the twisted tower, height × 0.8–1.4,
-  random turns. Then 5 wide/curvy "islands" near the landmarks with trees round them, ~18 trees in
-  downtown's gaps, and light posts (0.6x) every 60 m on both road edges. Nothing but posts within
-  40 m (`CLEAR` = 4 units) of the track centre line, measured to each piece's platform edge.
+  0,0,0 before use). `city.js` places copies at 2x (round platforms at 0.8x of that, so neighbours can stand
+  close; buildings collide by their own footprint): `cityLayout(track)` is pure maths (testable in Node, own
+  seed "vegas-kit"); each kit part is ONE InstancedMesh (≈30 draw calls in total).
+  1) Downtown: up to 12 skyscrapers + medium blocks north of the twisted tower (never between it and the
+  dome, and a clear ring round it), height × 0.8–1.4, random turns. 2) Wide/curvy "islands" anywhere left,
+  trees round each. 3) A fill pass on a 2.2-unit grid: small blocks (not in the dome–tower corridor) and
+  trees (~330) so little bare floor shows. 4) Light posts (0.6x) every 60 m on both road edges. Nothing but
+  posts within 40 m (`CLEAR` = 4 units) of the track centre line, measured to each platform/tree edge.
+  Glass is fairly solid and glowing (opacity 0.5, glow 1.5) so faces read as lit purple panels.
 - Bloom: ACES tone mapping, UnrealBloomPass strength 0.8 (phones 0.64), radius 0.6, threshold 0.8 —
   tuned so purple stays purple and gold stays gold. (AgX was tried: it whitened far more.)
 - `exports/track.json` — the 3D view's track centre line as `[x, y, z]` points (scene units); remake with

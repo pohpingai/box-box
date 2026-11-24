@@ -4,8 +4,8 @@
 // Inside the file they stand in a row: dome at 0, tower 25 units along, wheel
 // 50 units along (1 unit = 10 metres, same as the 3D view). We keep that row
 // exactly as made and only pick it up and set it down as one piece:
-//   - everything is shown at 2x the Blender size, so the landmarks stand out
-//     above the city instead of getting lost in it,
+//   - each landmark has its own size (see PARTS): dome 1.3x, tower 1.5x tall,
+//     wheel 2x, and the gaps between them are stretched 2x,
 //   - at that size only the wide southern half of the infield has room, so the
 //     dome sits there (the side nearest the opening camera), and the row points
 //     north: the tower rises behind the dome, near the middle of the infield,
@@ -15,17 +15,27 @@
 import * as THREE from "../vendor/three/three.module.min.js";
 import { GLTFLoader } from "../vendor/three/addons/loaders/GLTFLoader.js";
 
-export const HERO_PLACE = { x: -17, z: 55, turn: Math.PI / 2, size: 2 }; // turn = around the up axis
+export const HERO_PLACE = { x: -17, z: 55, turn: Math.PI / 2, spacing: 2 }; // turn = around the up axis;
+// spacing = the row's gaps are stretched 2x (dome → tower 50 units, tower → wheel 50 units)
 
-// Each hero's spot in the file (distance along the row) and how much room it
-// needs round it (its platform's radius) — the city keeps its buildings out.
-const ROW = [{ along: 0, r: 15.3 }, { along: 25, r: 6.3 }, { along: 50, r: 8.6 }];
+// Each landmark's own size (x = across, y = height, z = depth), its spot along
+// the row in the Blender file, and how much room it needs (its platform's radius
+// in Blender units) — the city keeps its buildings out of that circle.
+//   dome 1.3x, tower 1.3x wide but 1.5x tall (so the downtown skyline nearly
+//   reaches it), Ferris wheel 2x.
+const PARTS = {
+  Dome: { along: 0, size: [1.3, 1.3, 1.3], r: 15.3 },
+  Platform: { along: 0, size: [1.3, 1.3, 1.3], r: 15.3 }, // the dome's round base
+  Tower: { along: 25, size: [1.3, 1.5, 1.3], r: 6.3 },
+  Wheel: { along: 50, size: [2, 2, 2], r: 8.6 },
+};
+const ROW = [PARTS.Dome, PARTS.Tower, PARTS.Wheel];
 
 // Where the heroes stand on the map, so the city can keep clear of them.
 export function heroSpots() {
-  const { x, z, turn, size } = HERO_PLACE;
-  return ROW.map(({ along, r }) => ({
-    x: x + along * size * Math.cos(turn), z: z - along * size * Math.sin(turn), r: r * size + 3,
+  const { x, z, turn, spacing } = HERO_PLACE;
+  return ROW.map(({ along, size, r }) => ({
+    x: x + along * spacing * Math.cos(turn), z: z - along * spacing * Math.sin(turn), r: r * size[0] + 3,
   }));
 }
 
@@ -41,7 +51,6 @@ export function addHeroes(parent) {
   group.name = "heroes";
   group.position.set(HERO_PLACE.x, 0, HERO_PLACE.z);
   group.rotation.y = HERO_PLACE.turn;
-  group.scale.setScalar(HERO_PLACE.size);
   parent.add(group);
 
   const url = new URL("../models/heroes.glb", import.meta.url).href;
@@ -55,6 +64,15 @@ export function addHeroes(parent) {
       if (m.name === "HT_Glass") { m.opacity = 0.12; m.emissiveIntensity = 0.4; }
       if (m.transparent) m.depthWrite = false; // see-through glass shouldn't hide the lines behind it
     });
+    // Give each landmark its own size, standing on its own spot along the row.
+    group.userData.dome = [];
+    for (const node of [...gltf.scene.children]) {
+      const part = PARTS[node.name.split("_")[0]];
+      if (!part) continue;
+      node.position.set(part.along * HERO_PLACE.spacing, 0, 0);
+      node.scale.set(...part.size);
+      if (part.along === 0) group.userData.dome.push(node);
+    }
     group.add(gltf.scene);
     return group;
   }).catch((e) => {
