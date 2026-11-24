@@ -227,5 +227,17 @@
 - Tested: same race results as before on 8 seeds (engine untouched); browser race at 1280px and 375px,
   no 3D errors.
 
+## Extra: make the landmarks stand out
+- Landmarks shown at 2x size. The middle of the infield is too narrow for them at that size, so the row
+  moved to the wide southern part: dome at (-17, 55), tower just north of the middle (-17, 5), wheel
+  further north (-17, -45). Closest any part gets to the track's centre line: 104 m (dome platform),
+  checked point by point against `exports/track.json`.
+- City thinned out: no buildings outside the track loop any more; inside, 30 buildings, about three
+  quarters of them clustered round the landmarks. (Light posts and little trees unchanged.)
+- Tower glass made much clearer (see-through 0.5 → 0.12, dimmer glow), so its purple lines show
+  instead of a solid purple block.
+- Tested: same race results as before on 8 seeds (engine untouched); browser race at 1280px and 375px,
+  no 3D errors.
+
 ## Next: Step 4 — Team B on another model
 Two different AI models race each other.

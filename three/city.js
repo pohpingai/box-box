@@ -1,8 +1,8 @@
 // three/city.js — the "hologram" city: an endless black floor with a faint
 // purple grid, and buildings drawn as glowing WIREFRAMES (edges + window lines
-// only, no solid walls), in purple and gold. Most of them are packed inside the
-// circuit, with a few tall towers in the middle. Small light posts line the
-// track and little gold trees dot the ground.
+// only, no solid walls), in purple and gold. Only about 30, all inside the
+// circuit and mostly round the landmarks, so the landmarks stand out.
+// Small light posts line the track and little gold trees dot the ground.
 // The layout comes from a fixed seed, so the city looks the same on every
 // visit. (Its own random numbers: the race is untouched.)
 import * as THREE from "../vendor/three/three.module.min.js";
@@ -54,36 +54,31 @@ function floor(track) {
   return g;
 }
 
-// Where the buildings go. Inside the loop: a dense cluster, taller towards the
-// middle, plus a handful of skyscrapers. Outside: a few low blocks.
+// Where the buildings go: only INSIDE the loop, and only about 30, so the
+// landmarks stand out. Most cluster round the landmarks (like a downtown
+// around them); a few are spread through the rest of the infield.
+const BUILDINGS = 30;
 function layout(rng, track, near, inside, clear) {
   const boxes = [];
   const R = track.radius;
+  const spots = track.landmarkSpots;
   const fits = (b) => clear(b.x, b.z, Math.max(b.w, b.d) / 2 + 1) &&
     !boxes.some((o) => Math.abs(o.x - b.x) < (o.w + b.w) / 2 + 1.6 && Math.abs(o.z - b.z) < (o.d + b.d) / 2 + 1.6);
 
-  // A few tall towers first, so they get the best spots in the middle.
-  const towers = [[-2, 14, 34], [8, -8, 46], [-10, -32, 28], [10, 34, 24], [-12, 44, 38], [4, 64, 20], [-4, -56, 22]];
-  for (const [x, z, h] of towers) {
-    const b = { x, z, w: 4 + rng() * 2, d: 4 + rng() * 2, h, gold: h > 30, tower: true };
-    if (inside(x, z) && !near(x, z, 5) && fits(b)) boxes.push(b);
-  }
-
-  for (let tries = 0; tries < 5000 && boxes.length < 115; tries++) {
-    const x = (rng() - 0.5) * R * 1.4, z = (rng() - 0.5) * R * 2.1;
+  for (let tries = 0; tries < 5000 && boxes.length < BUILDINGS; tries++) {
+    let x, z, nearLandmark = rng() < 0.75;
+    if (nearLandmark) {
+      // A spot in a ring just outside one of the landmarks.
+      const s = spots[Math.floor(rng() * spots.length)], a = rng() * Math.PI * 2, d = s.r + 2 + rng() * 16;
+      x = s.x + Math.cos(a) * d; z = s.z + Math.sin(a) * d;
+    } else {
+      x = (rng() - 0.5) * R * 1.4; z = (rng() - 0.5) * R * 2.1;
+    }
     const w = 2.5 + rng() * 5, d = 2.5 + rng() * 5;
     if (!inside(x, z) || near(x, z, Math.max(w, d) / 2 + 3)) continue;
-    const middle = 1 - Math.min(1, Math.hypot(x / (R * 0.6), z / R));
-    const b = { x, z, w, d, h: 2 + rng() * (4 + middle * 14), gold: rng() < 0.35 };
-    if (fits(b)) boxes.push(b);
-  }
-  // A thin ring of low blocks outside the circuit, so the city doesn't stop dead at the track.
-  for (let tries = 0; tries < 1500 && boxes.length < 150; tries++) {
-    const a = rng() * Math.PI * 2, r = R * (0.75 + rng() * 0.55);
-    const x = Math.cos(a) * r * 0.75, z = Math.sin(a) * r * 1.05;
-    const w = 3 + rng() * 5, d = 3 + rng() * 5;
-    if (inside(x, z) || near(x, z, Math.max(w, d) / 2 + 4)) continue;
-    const b = { x, z, w, d, h: 1.5 + rng() * 6, gold: rng() < 0.3 };
+    // Next to a landmark: a bit taller, a few true towers. Elsewhere: low blocks.
+    const h = nearLandmark ? 4 + rng() * (rng() < 0.2 ? 26 : 12) : 2 + rng() * 6;
+    const b = { x, z, w, d, h, gold: rng() < 0.35, tower: h > 20 };
     if (fits(b)) boxes.push(b);
   }
   return boxes;

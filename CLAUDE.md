@@ -65,16 +65,18 @@ AI "brains" for each team, watch the race, and compare which brain did better.
 - `three/` — the 3D Las Vegas night view (step 3.5, "hologram" look): `view.js` (puts it together,
   bloom glow, softer when the camera swoops close), `track3d.js` (outline → 3D points), `ribbon.js`
   (thin neon track line), `city.js` (endless purple grid floor, wireframe purple/gold buildings
-  inside the circuit, light posts, trees; keeps clear of the landmarks), `heroes.js` (loads
+  inside the circuit only, light posts, trees; keeps clear of the landmarks), `heroes.js` (loads
   `models/heroes.glb` and places it — see below),
   `cars.js` (small car shapes + long light trails), `tags.js` (floating "A · BOX MEDIUMS" call tag
   above each car — reads `frame.calls` from `ui-replay.js`), `labels.js` (pop-up words),
   `drone.js` (camera).
 - `models/heroes.glb` — the landmarks, made in Blender by the owner (1 unit = 10 m): geodesic dome, twisted
   tower, Ferris wheel, in a row (0 / 25 / 50 units along). Loaded with GLTFLoader and placed as ONE piece
-  (the row is never rearranged): dome at the infield centre (0, 0), row turned 110° so it points
-  north-north-west → tower (-8.6, -23.5), wheel (-17.1, -47.0). Every part is ≥ 8 units (80 m) from the
-  track centre line. Glow levels are toned down in `heroes.js` (Blender's 3–5 bleached to white).
+  (the row is never rearranged), shown at 2x size. At 2x only the wide south of the infield has room:
+  dome at (-17, 55), row turned 90° to point north → tower (-17, 5), wheel (-17, -45). Every part is
+  ≥ 10 units (100 m) from the track centre line. Glow levels are toned down in `heroes.js` (Blender's 3–5
+  bleached to white); the tower's glass is made very clear (opacity 0.12) so its purple lines show.
+- City: only ~30 buildings, all inside the loop, ~75% clustered round the landmarks (`city.js`, `BUILDINGS`).
 - Bloom: ACES tone mapping, UnrealBloomPass strength 0.6 (phones 0.48), radius 0.4, threshold 0.8 —
   tuned so purple stays purple and gold stays gold. (AgX was tried: it whitened far more.)
 - `exports/track.json` — the 3D view's track centre line as `[x, y, z]` points (scene units); remake with
