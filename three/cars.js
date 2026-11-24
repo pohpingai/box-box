@@ -11,8 +11,10 @@ export const TEAM_COLOURS = { A: "#00e0c6", B: "#ffa020" };
 const LAP_SECONDS = 90;    // how much time one trip round the track stands for
 const TRAIL = 120;         // points in each light trail
 const TRAIL_LENGTH = 0.2;  // trail length, as a share of the lap
-const TRAIL_WIDTH = 1.5;   // trail width right behind the car
-const SCALE = 2.4;         // car size (1 = about 4 metres long)
+const TRAIL_WIDTH = 0.9;   // trail width right behind the car
+const LANE = { A: 0.55, B: -0.55 }; // each car keeps to its own side of the road, so the two trails
+                                    // don't sit on top of each other (teal + orange on top of each other looks white)
+const SCALE = 1.7;         // car size (1 = about 4 metres long; drawn bigger than life so you can see them)
 
 export function makeCars(track) {
   const group = new THREE.Group();
@@ -22,7 +24,7 @@ export function makeCars(track) {
     const body = carShape(c);
     const trail = makeTrail(c);
     group.add(body, trail);
-    cars[team] = { body, trail, s: 0, pool: body.userData.pool };
+    cars[team] = { body, trail, s: 0, pool: body.userData.pool, lane: LANE[team] };
   }
   let speaking = null; // the team whose engineer is on the radio: its glow pool pulses
 
@@ -76,7 +78,7 @@ export function makeCars(track) {
   function place(car, s) {
     car.s = s;
     const p = track.pointAt(s);
-    car.body.position.set(p.x, 0.1, p.z);
+    car.body.position.set(p.x - p.dz * car.lane, 0.1, p.z + p.dx * car.lane);
     car.body.rotation.y = -Math.atan2(p.dz, p.dx); // nose points along the track
 
     // The trail: a flat glowing strip along the track behind the car, thinning out.
@@ -84,8 +86,8 @@ export function makeCars(track) {
     for (let i = 0; i < TRAIL; i++) {
       const q = track.pointAt(s - 0.002 - (i / (TRAIL - 1)) * TRAIL_LENGTH);
       const w = (TRAIL_WIDTH / 2) * (1 - i / TRAIL) ** 0.6;
-      const nx = -q.dz, nz = q.dx;
-      arr.set([q.x + nx * w, 0.12, q.z + nz * w, q.x - nx * w, 0.12, q.z - nz * w], i * 6);
+      const nx = -q.dz, nz = q.dx, cx = q.x + nx * car.lane, cz = q.z + nz * car.lane;
+      arr.set([cx + nx * w, 0.12, cz + nz * w, cx - nx * w, 0.12, cz - nz * w], i * 6);
     }
     car.trail.geometry.attributes.position.needsUpdate = true;
     car.trail.geometry.computeBoundingSphere();
@@ -125,14 +127,14 @@ function carShape(c) {
   return g;
 }
 
-// The light trail: a strip of TRAIL pairs of points, bright and white-hot
-// right behind the car, fading to nothing at the far end.
+// The light trail: a strip of TRAIL pairs of points, bright team colour
+// (teal / orange) right behind the car, fading to nothing at the far end.
 function makeTrail(c) {
   const bright = c.clone().multiplyScalar(1.6);
   const pos = new Float32Array(TRAIL * 6), col = new Float32Array(TRAIL * 6), idx = [];
   for (let i = 0; i < TRAIL; i++) {
     const k = (1 - i / TRAIL) ** 1.4;
-    const hot = Math.max(0, 1 - i / 8) * 0.8; // a white-hot start
+    const hot = Math.max(0, 1 - i / 8) * 0.2; // only a hint of white at the start, so the colour stays
     const r = (bright.r + hot) * k, g = (bright.g + hot) * k, b = (bright.b + hot) * k;
     col.set([r, g, b, r, g, b], i * 6);
     if (i < TRAIL - 1) {

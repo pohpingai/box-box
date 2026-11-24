@@ -239,5 +239,18 @@
 - Tested: same race results as before on 8 seeds (engine untouched); browser race at 1280px and 375px,
   no 3D errors.
 
+## Extra: neon diorama look
+- Camera: lower and closer, like looking at a model city — about 35° down, 1.75 km from the middle of
+  the landmarks, still slowly circling them (phones a bit further back so everything fits).
+- Floor: dark glossy floor that faintly mirrors the neon (three's Reflector, drawn at half screen size,
+  a quarter on phones, to keep it cheap). The floating call tags are kept out of the mirror.
+- Track: now a purple road — dark road surface, glowing purple edge lines, soft haze, faint centre line
+  (no more white-hot core). Cars a bit smaller and each in its own lane, so the teal and orange trails
+  stay teal and orange instead of adding up to white. Trails' white tip toned down.
+- Removed the random gold "tree" dots and the grid sparkle dots. Small light posts now stand every
+  60 m along both road edges.
+- Faint purple fog for depth (the sky is the same deep purple, so the horizon melts away).
+- Tested: same race results on 8 seeds (engine untouched); browser race at 1280px and 375px, no 3D errors.
+
 ## Next: Step 4 — Team B on another model
 Two different AI models race each other.

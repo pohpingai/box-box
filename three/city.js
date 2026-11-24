@@ -1,8 +1,8 @@
-// three/city.js — the "hologram" city: an endless black floor with a faint
-// purple grid, and buildings drawn as glowing WIREFRAMES (edges + window lines
+// three/city.js — the "hologram" city: buildings drawn as glowing WIREFRAMES (edges + window lines
 // only, no solid walls), in purple and gold. Only about 30, all inside the
 // circuit and mostly round the landmarks, so the landmarks stand out.
-// Small light posts line the track and little gold trees dot the ground.
+// Small light posts stand at even spacing along both edges of the track.
+// (The floor is in floor.js.)
 // The layout comes from a fixed seed, so the city looks the same on every
 // visit. (Its own random numbers: the race is untouched.)
 import * as THREE from "../vendor/three/three.module.min.js";
@@ -15,7 +15,6 @@ const GOLD = new THREE.Color(1.15, 0.7, 0.22);
 export function makeCity(track) {
   const rng = makeRng("vegas-city");
   const group = new THREE.Group();
-  group.add(floor(track));
 
   // Is (x, z) too close to the track? Buildings stay off it.
   const near = (x, z, d) => track.points.some((p, i) => i % 3 === 0 && (p.x - x) ** 2 + (p.z - z) ** 2 < d * d);
@@ -27,31 +26,7 @@ export function makeCity(track) {
   group.add(wireframes(boxes));
   group.add(windowFill(boxes));
   group.add(lightPosts(track));
-  group.add(trees(rng, track, near, inside, clear, boxes));
   return group;
-}
-
-// An "endless" black floor: a huge plane plus a purple grid that fades into
-// the fog in the distance, so you never see where it ends.
-function floor(track) {
-  const g = new THREE.Group();
-  const size = track.radius * 16;
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshBasicMaterial({ color: 0x000000 }));
-  ground.rotation.x = -Math.PI / 2;
-  g.add(ground);
-  const grid = new THREE.GridHelper(size, Math.round(size / 12), 0x4a2490, 0x2e1660);
-  grid.position.y = 0.01;
-  grid.material.transparent = true;
-  grid.material.opacity = 0.85;
-  g.add(grid);
-
-  // Tiny purple dots where the grid lines cross (like a hologram table).
-  const pos = [], step = 12, half = track.radius * 4;
-  for (let x = -half; x <= half; x += step) for (let z = -half; z <= half; z += step) pos.push(x, 0.05, z);
-  const dots = new THREE.BufferGeometry();
-  dots.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-  g.add(new THREE.Points(dots, new THREE.PointsMaterial({ color: new THREE.Color(0.5, 0.25, 0.9), size: 0.45, toneMapped: false })));
-  return g;
 }
 
 // Where the buildings go: only INSIDE the loop, and only about 30, so the
@@ -151,47 +126,26 @@ function windowFill(boxes) {
   return mesh;
 }
 
-// Little light posts along both sides of the track: a short line with a bright dot on top.
+// Small light posts at even spacing (every 60 m) along both edges of the road:
+// a short purple stem with a soft white-purple light on top.
+const POST_EVERY = 12; // track points (0.5 units each) → 6 units = 60 m
 function lightPosts(track) {
   const stems = [], tops = [];
   track.points.forEach((p, i) => {
-    if (i % 22) return;
+    if (i % POST_EVERY) return;
     for (const side of [-1, 1]) {
-      const x = p.x + p.nx * 3.2 * side, z = p.z + p.nz * 3.2 * side;
-      stems.push(x, 0, z, x, 2.2, z);
-      tops.push(x, 2.3, z);
+      const x = p.x + p.nx * 2.1 * side, z = p.z + p.nz * 2.1 * side;
+      stems.push(x, 0, z, x, 1.1, z);
+      tops.push(x, 1.15, z);
     }
   });
   const g = new THREE.Group();
   const sg = new THREE.BufferGeometry();
   sg.setAttribute("position", new THREE.Float32BufferAttribute(stems, 3));
-  g.add(new THREE.LineSegments(sg, new THREE.LineBasicMaterial({ color: new THREE.Color(0.7, 0.35, 1.3), toneMapped: false, transparent: true, opacity: 0.7 })));
+  g.add(new THREE.LineSegments(sg, new THREE.LineBasicMaterial({ color: new THREE.Color(0.5, 0.25, 0.95), toneMapped: false, transparent: true, opacity: 0.6 })));
   const tg = new THREE.BufferGeometry();
   tg.setAttribute("position", new THREE.Float32BufferAttribute(tops, 3));
-  g.add(new THREE.Points(tg, new THREE.PointsMaterial({ color: new THREE.Color(1.4, 1.0, 1.7), size: 0.7, toneMapped: false })));
-  return g;
-}
-
-// Little gold trees (a short trunk and a glowing dot of leaves) between the buildings.
-function trees(rng, track, near, inside, clear, boxes) {
-  const trunks = [], leaves = [];
-  const inBuilding = (x, z) => boxes.some((b) => Math.abs(b.x - x) < b.w / 2 + 0.8 && Math.abs(b.z - z) < b.d / 2 + 0.8);
-  const R = track.radius;
-  for (let tries = 0; tries < 3000 && leaves.length < 240 * 3; tries++) {
-    const x = (rng() - 0.5) * R * 1.6, z = (rng() - 0.5) * R * 2.2;
-    if (near(x, z, 2.6) || inBuilding(x, z) || !clear(x, z, 0.5)) continue;
-    if (!inside(x, z) && rng() < 0.6) continue; // most trees inside the circuit
-    const h = 0.8 + rng() * 0.6;
-    trunks.push(x, 0, z, x, h, z);
-    leaves.push(x, h + 0.35, z);
-  }
-  const g = new THREE.Group();
-  const tg = new THREE.BufferGeometry();
-  tg.setAttribute("position", new THREE.Float32BufferAttribute(trunks, 3));
-  g.add(new THREE.LineSegments(tg, new THREE.LineBasicMaterial({ color: new THREE.Color(0.6, 0.4, 0.15), toneMapped: false })));
-  const lg = new THREE.BufferGeometry();
-  lg.setAttribute("position", new THREE.Float32BufferAttribute(leaves, 3));
-  g.add(new THREE.Points(lg, new THREE.PointsMaterial({ color: new THREE.Color(1.1, 0.75, 0.25), size: 0.8, toneMapped: false })));
+  g.add(new THREE.Points(tg, new THREE.PointsMaterial({ color: new THREE.Color(1.1, 0.8, 1.4), size: 0.45, toneMapped: false })));
   return g;
 }
 

@@ -1,11 +1,12 @@
-// three/ribbon.js — the track as a thin glowing neon line: a bright
-// purple-white core with a soft purple haze around it. Bright colours glow
-// because of the "bloom" effect (see view.js). Under the safety car the haze
-// turns yellow.
+// three/ribbon.js — the track as a purple neon ROAD: a dark road surface
+// (about 30 m wide, so the cars fit on it) with a glowing purple line along each edge, a soft purple
+// haze spilling round the edges, and a faint purple line down the middle.
+// Bright colours glow because of the "bloom" effect (see view.js).
+// Under the safety car the edges and haze turn yellow.
 import * as THREE from "../vendor/three/three.module.min.js";
 
 // One flat strip that follows the track, from `inner` to `outer` units off the centre line.
-function strip(points, inner, outer, y, colour, opacity = 1) {
+function strip(points, inner, outer, y, colour, opacity = 1, glow = true) {
   const pos = [];
   const idx = [];
   points.forEach((p, i) => {
@@ -18,7 +19,7 @@ function strip(points, inner, outer, y, colour, opacity = 1) {
   g.setIndex(idx);
   const m = new THREE.MeshBasicMaterial({
     color: colour, transparent: true, opacity, side: THREE.DoubleSide, toneMapped: false,
-    blending: THREE.AdditiveBlending, depthWrite: false,
+    blending: glow ? THREE.AdditiveBlending : THREE.NormalBlending, depthWrite: false,
   });
   return new THREE.Mesh(g, m);
 }
@@ -26,15 +27,17 @@ function strip(points, inner, outer, y, colour, opacity = 1) {
 export function makeRibbon(track) {
   const group = new THREE.Group();
   const P = track.points;
-  const PURPLE = new THREE.Color(0.9, 0.35, 1.8);
-  const haze = strip(P, -1.4, 1.4, 0.03, PURPLE, 0.12);                       // wide soft glow
-  const glow = strip(P, -0.55, 0.55, 0.04, PURPLE, 0.6);                     // purple tube
-  const core = strip(P, -0.16, 0.16, 0.05, new THREE.Color(1.6, 1.35, 2.0));   // white-hot core
-  group.add(haze, glow, core);
+  const PURPLE = new THREE.Color(0.75, 0.25, 1.6);   // edge glow
+  const W = 1.5;                                         // half the road's width (units): 30 m road
+  const road = strip(P, -W, W, 0.02, new THREE.Color(0.018, 0.01, 0.03), 0.92, false); // dark tarmac
+  const haze = strip(P, -W - 1.0, W + 1.0, 0.025, PURPLE, 0.07);                     // soft spill round the road
+  const edges = [-1, 1].map((side) => strip(P, side * W - 0.09, side * W + 0.09, 0.04, PURPLE, 0.95)); // neon edge lines
+  const core = strip(P, -0.05, 0.05, 0.035, new THREE.Color(0.55, 0.25, 1.0), 0.35); // faint centre line
+  group.add(road, haze, ...edges, core);
 
   // Start/finish line: a short bright bar across the track at point 0.
   const s = P[0];
-  const bar = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.06, 3), new THREE.MeshBasicMaterial({ color: new THREE.Color(2, 2, 2), toneMapped: false }));
+  const bar = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.06, 1.8), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.3, 1.2, 1.5), toneMapped: false }));
   bar.position.set(s.x, 0.06, s.z);
   bar.rotation.y = -Math.atan2(s.dz, s.dx);
   group.add(bar);
@@ -42,8 +45,7 @@ export function makeRibbon(track) {
   // Under the safety car the glow turns yellow.
   const yellow = new THREE.Color(1.0, 0.78, 0.04);
   group.userData.setSafetyCar = (on) => {
-    haze.material.color.copy(on ? yellow : PURPLE);
-    glow.material.color.copy(on ? yellow : PURPLE);
+    for (const m of [haze, ...edges]) m.material.color.copy(on ? yellow : PURPLE);
   };
   return group;
 }

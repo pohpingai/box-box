@@ -1,4 +1,6 @@
-// three/drone.js — the camera, flown like a slow drone: it circles the city.
+// three/drone.js — the camera, flown like a slow drone. Like looking at a
+// model city (a "diorama"): it stays fairly low and close, looking down at
+// about 35°, and slowly circles the landmarks with the track round them.
 // For a big moment it swoops in close to a car for 2 seconds, then flies back.
 // With "reduce motion" switched on in the phone/computer settings it holds still
 // and never swoops.
@@ -6,11 +8,12 @@ import * as THREE from "../vendor/three/three.module.min.js";
 
 const ORBIT_SECONDS = 150; // one full circle
 const IN = 0.7, HOLD = 2, OUT = 1.2; // swoop timing (seconds)
+const DOWN = (35 * Math.PI) / 180;    // how steeply the camera looks down
+const RANGE = 175;                    // camera's distance from what it looks at (units, 1 = 10 m)
 
-export function makeDrone(camera, track, reduceMotion) {
+export function makeDrone(camera, track, reduceMotion, centre) {
   let angle = 0.6, focus = null; // focus = { follow(), age }
   let close = 0; // 0 = high orbit, 1 = fully swooped in
-  const centre = new THREE.Vector3(0, 0, 0);
   const orbitPos = new THREE.Vector3(), closePos = new THREE.Vector3();
   const look = new THREE.Vector3(), target = new THREE.Vector3();
 
@@ -25,9 +28,10 @@ export function makeDrone(camera, track, reduceMotion) {
     },
     update(dt, aspect) {
       if (!reduceMotion) angle += (dt / ORBIT_SECONDS) * Math.PI * 2;
-      // Phones (tall screens) need the drone further back to fit the track in.
-      const dist = track.radius * (aspect < 1 ? 2.2 : 1.75);
-      orbitPos.set(Math.cos(angle) * dist, dist * 0.62, Math.sin(angle) * dist);
+      // Phones (tall screens) need the drone further back to fit the landmarks in.
+      const range = RANGE * (aspect < 1 ? 1.45 : 1);
+      const flat = range * Math.cos(DOWN);
+      orbitPos.set(centre.x + Math.cos(angle) * flat, centre.y + range * Math.sin(DOWN), centre.z + Math.sin(angle) * flat);
 
       let w = 0;
       if (focus) {

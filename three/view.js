@@ -1,7 +1,7 @@
 // three/view.js — the 3D Las Vegas night view. Puts the pieces together:
-// a hologram-style city (purple grid, wireframe buildings) + the Blender-made
+// a glossy mirror floor + purple fog + a hologram-style city (wireframe buildings) + the Blender-made
 // landmarks (dome, twisted tower, Ferris wheel — see heroes.js) + neon
-// track + cars with light trails + call tags + pop-up words + drone camera,
+// purple road + cars with light trails + call tags + pop-up words + drone camera,
 // and the "bloom" effect that makes bright things glow.
 //
 // The page talks to it with three calls:
@@ -18,7 +18,8 @@ import { VEGAS } from "../track/vegas.js";
 import { buildTrack } from "./track3d.js";
 import { makeRibbon } from "./ribbon.js";
 import { makeCity } from "./city.js";
-import { addHeroes, heroSpots } from "./heroes.js";
+import { addHeroes, heroSpots, heroCentre } from "./heroes.js";
+import { makeFloor } from "./floor.js";
 import { makeCars, TEAM_COLOURS } from "./cars.js";
 import { makeLabels } from "./labels.js";
 import { makeTags } from "./tags.js";
@@ -42,8 +43,11 @@ export function makeView(host, { getMsPerLap, isPaused }) {
   host.prepend(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x000000);
-  scene.fog = new THREE.FogExp2(0x000000, 0.0026); // far grid lines fade away: the floor looks endless
+  // Faint purple fog: things further away sink into a deep purple haze (depth),
+  // and the far floor fades out so it looks endless.
+  const FOG = new THREE.Color().setRGB(0.022, 0.006, 0.05);
+  scene.background = FOG;
+  scene.fog = new THREE.FogExp2(FOG, 0.0042);
   const camera = new THREE.PerspectiveCamera(45, 1, 0.5, 2000);
 
   const track = buildTrack(VEGAS.coords);
@@ -53,9 +57,12 @@ export function makeView(host, { getMsPerLap, isPaused }) {
   const labels = makeLabels();
   const tags = makeTags(["A", "B"], TEAM_COLOURS);
   tags.setCalls({});
-  scene.add(makeCity(track), ribbon, cars.group, tags.group, labels.group);
+  const floor = makeFloor(track, { small: Math.min(innerWidth, innerHeight) < 600 });
+  scene.add(floor, makeCity(track), ribbon, cars.group, tags.group, labels.group);
+  floor.userData.skipInMirror(tags.group, labels.group);
   addHeroes(scene); // loads in the background; appears when ready
-  const drone = makeDrone(camera, track, reduceMotion);
+  // The camera circles the middle of the landmarks, aiming a little above the ground.
+  const drone = makeDrone(camera, track, reduceMotion, heroCentre());
 
   // Bloom: anything bright gets a soft glow round it. Tuned so purple stays
   // purple and gold stays gold: only really bright things glow (threshold 0.8),
@@ -73,6 +80,7 @@ export function makeView(host, { getMsPerLap, isPaused }) {
     if (!w || !h) return;
     renderer.setSize(w, h, false);
     composer.setSize(w, h);
+    floor.userData.setSize(w * renderer.getPixelRatio(), h * renderer.getPixelRatio());
     baseBloom = w < 600 ? BLOOM * 0.8 : BLOOM; // small screens: gentler glow
     camera.aspect = w / h;
     camera.updateProjectionMatrix();

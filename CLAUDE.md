@@ -63,13 +63,16 @@ AI "brains" for each team, watch the race, and compare which brain did better.
   (3 sections), cut whole bars, and cross-fade the bar after the loop into its first half bar.
   Sound effects: `POST /v1/sound-generation`. The key has a 5,000-credit quota — check before big jobs.
 - `three/` — the 3D Las Vegas night view (step 3.5, "hologram" look): `view.js` (puts it together,
-  bloom glow, softer when the camera swoops close), `track3d.js` (outline → 3D points), `ribbon.js`
-  (thin neon track line), `city.js` (endless purple grid floor, wireframe purple/gold buildings
-  inside the circuit only, light posts, trees; keeps clear of the landmarks), `heroes.js` (loads
+  bloom glow, faint purple fog, softer when the camera swoops close), `track3d.js` (outline → 3D points),
+  `ribbon.js` (purple road: dark 30 m surface, glowing purple edges, faint centre line), `floor.js`
+  (dark glossy mirror floor via three's Reflector at ½ screen size (¼ on phones), dimmed + fogged,
+  faint grid; tags/labels hidden from the mirror), `city.js` (wireframe purple/gold buildings inside
+  the circuit only, light posts every 60 m on both road edges; keeps clear of the landmarks), `heroes.js` (loads
   `models/heroes.glb` and places it — see below),
   `cars.js` (small car shapes + long light trails), `tags.js` (floating "A · BOX MEDIUMS" call tag
   above each car — reads `frame.calls` from `ui-replay.js`), `labels.js` (pop-up words),
-  `drone.js` (camera).
+  `drone.js` (camera: "diorama" view, 35° down, 175 units from `heroCentre()`, slow orbit; phones 1.45x further).
+  Cars drive in lanes (A left, B right) so the teal and orange trails never overlap into white.
 - `models/heroes.glb` — the landmarks, made in Blender by the owner (1 unit = 10 m): geodesic dome, twisted
   tower, Ferris wheel, in a row (0 / 25 / 50 units along). Loaded with GLTFLoader and placed as ONE piece
   (the row is never rearranged), shown at 2x size. At 2x only the wide south of the infield has room:
@@ -82,7 +85,7 @@ AI "brains" for each team, watch the race, and compare which brain did better.
 - `exports/track.json` — the 3D view's track centre line as `[x, y, z]` points (scene units); remake with
   `node exports/make-track-json.js` after changing the track.
 - `track/vegas.js` — the real Las Vegas outline (from pohpingai/f1-news; f1-circuits, MIT).
-- `vendor/three/` — a copy of Three.js 0.170 (only the files we use: postprocessing, GLTFLoader + BufferGeometryUtils). One change from the npm
+- `vendor/three/` — a copy of Three.js 0.170 (only the files we use: postprocessing, GLTFLoader + BufferGeometryUtils, Reflector). One change from the npm
   package `three`: in `addons/`, `from 'three'` is rewritten to `from '../../three.module.min.js'`,
   so no "import map" is needed (older iPhones don't support import maps). Redo that when upgrading.
 
