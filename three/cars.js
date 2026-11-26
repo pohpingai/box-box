@@ -66,6 +66,10 @@ export function makeCars(track) {
       }
     },
     position(team) { return cars[team].body.position; },
+    // How far round the track the car is (in laps; the camera director uses it).
+    progress(team) { return cars[team].s; },
+    // Which car is ahead right now.
+    leader() { return cars.A.s >= cars.B.s ? "A" : "B"; },
     setSpeaking(team) { speaking = team; },
   };
 

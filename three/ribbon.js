@@ -45,8 +45,13 @@ export function makeRibbon(track) {
 
   // Under the safety car the glow turns yellow.
   const yellow = new THREE.Color(1.0, 0.78, 0.04);
-  group.userData.setSafetyCar = (on) => {
-    for (const m of [haze, lit, ...edges]) m.material.color.copy(on ? yellow : PURPLE);
+  // Close-up cameras see the neon from a few metres away: there it is turned
+  // down (k < 1), or the bloom bleaches it white instead of purple.
+  let sc = false, k = 1;
+  const paint = () => {
+    for (const m of [haze, lit, ...edges]) m.material.color.copy(sc ? yellow : PURPLE).multiplyScalar(k);
   };
+  group.userData.setSafetyCar = (on) => { sc = on; paint(); };
+  group.userData.setBrightness = (v) => { if (v !== k) { k = v; paint(); } };
   return group;
 }

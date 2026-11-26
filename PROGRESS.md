@@ -280,5 +280,25 @@
 - Camera closer (180 instead of 200), so the diorama fills most of the view.
 - Tested: same race results on 8 seeds (engine untouched); browser race at 1280px and 375px, no 3D errors.
 
+## Extra: F1 TV broadcast look
+- The 3D view is now filmed like a TV broadcast instead of a map. A "director" cuts between cameras every
+  6–8 seconds, and straight away on a pit stop, overtake or safety car:
+  - CHASE: low behind a car (usually the one in second, so the battle is in shot), slight lag, looking ahead.
+  - TURN 1 / 3 / 7 / 10 / 12: fixed trackside cameras at corners near the landmarks; they pan to follow the
+    cars as they pass, then rest on the corner.
+  - HELI: a helicopter slowly circling the dome, high above the buildings, cars passing below.
+  - OVERVIEW: the whole circuit, only before the start, at the finish and while paused.
+  Each cut is a quick 0.4 s fade through black, with a small "CAM · CHASE · B" label at the top.
+- Film look: depth of field (things far from the car go soft), a soft blurred wet-road reflection
+  (streaks, not a sharp mirror), SMAA edge smoothing, a subtle vignette and very light film grain. Bloom only
+  on bright things; the road neon is turned down on close shots so it stays purple.
+- Set dressing: buildings at 1.5x, placed where the cameras look (behind each trackside corner, along the
+  straights), 60 trees. The twisted tower glows brighter and stays the tallest.
+- Phones: no depth of field or SMAA, a smaller mirror with less blur work, lighter grain.
+- Known limit: the race engine plays a whole lap (about 6 km) in 4 s on "Slow", so close cameras show
+  the cars moving very fast. A slower "TV" playback speed would make the chase cam feel real.
+- Tested: same race results on 8 seeds (engine untouched); all four cameras, automatic cuts, pause →
+  overview and back, at 1280px and 375px, no errors.
+
 ## Next: Step 4 — Team B on another model
 Two different AI models race each other.

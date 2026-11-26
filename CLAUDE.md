@@ -62,42 +62,44 @@ AI "brains" for each team, watch the race, and compare which brain did better.
   even out loudness with ffmpeg `loudnorm`. Music loops: make one song with a `composition_plan`
   (3 sections), cut whole bars, and cross-fade the bar after the loop into its first half bar.
   Sound effects: `POST /v1/sound-generation`. The key has a 5,000-credit quota — check before big jobs.
-- `three/` — the 3D Las Vegas night view (step 3.5, "hologram" look): `view.js` (puts it together,
-  bloom glow, black sky + faint black fog, softer when the camera swoops close), `track3d.js` (outline → 3D points),
-  `ribbon.js` (purple neon road: 30 m, bright purple edges, glowing surface, wide soft haze), `floor.js`
-  (dark glossy mirror floor via three's Reflector at ½ screen size (¼ on phones), dimmed + fogged,
-  purple grid + small dots at the crossings, both fading out with distance; tags/labels and the dome hidden
-  from the mirror), `city.js` (the city from
-  `models/kit.glb` — see below), `heroes.js` (loads
-  `models/heroes.glb` and places it — see below),
+- `three/` — the 3D Las Vegas night race, shown like an F1 TV broadcast (step 3.5+): `view.js` (puts it together),
+  `director.js` (the TV director: CHASE (behind the car in 2nd, slight lag) / TURN n (fixed trackside cams that
+  pan to follow) / HELI (high orbit round the dome) / OVERVIEW (only before the start, at the finish, while
+  paused); auto-cut every 6–8 s and at once on pit stop / overtake / safety car (that shot holds even if the
+  race auto-pauses); 0.4 s fade through black; `?cam=chase|turn|heli|overview` locks one camera),
+  `camspots.js` (the 5 trackside cameras: turns 1, 3, 7, 10, 12 — our own bend count, close to but not the
+  official 17), `post.js` (film look: render → depth of field (BokehPass, big screens) → tags/words overlay
+  (always sharp) → bloom (threshold 0.8) → ACES → SMAA (big screens) → `film.js` vignette + light grain + cut
+  fade), `track3d.js` (outline → 3D points), `ribbon.js` (purple neon road: 30 m, bright purple edges, glowing
+  surface, wide soft haze; dimmed on close shots so it stays purple), `floor.js` (wet-road floor: three's
+  Reflector at 0.35 screen size (0.2 on phones), blurred into vertical streaks (14 taps, 6 on phones), dimmed +
+  fogged; purple grid + small dots fading with distance; dome kept out of the mirror), `city.js` + `city-layout.js`
+  (the city from `models/kit.glb` — see below), `heroes.js` (loads `models/heroes.glb` and places it — see below),
   `cars.js` (small car shapes + long light trails), `tags.js` (floating "A · BOX MEDIUMS" call tag
-  above each car — reads `frame.calls` from `ui-replay.js`), `labels.js` (pop-up words),
-  `drone.js` (camera: low "diorama" view, 25° down, 180 units from (-6, 8, 8), whole circuit in view, slow orbit;
-  phones 1.45x further).
+  above each car — reads `frame.calls` from `ui-replay.js`), `labels.js` (pop-up words).
   Cars drive in lanes (A left, B right) so the teal and orange trails never overlap into white.
+  Phones (screen < 600 px): no depth of field, no SMAA, smaller blurred mirror, lighter grain.
 - `models/heroes.glb` — the landmarks, made in Blender by the owner (1 unit = 10 m): geodesic dome, twisted
   tower, Ferris wheel, in a row (0 / 25 / 50 units along). Loaded with GLTFLoader; the row is turned 90° to
   point north with its gaps stretched 2x: dome (-17, 55), tower (-17, 5), wheel (-17, -45). Each has its own
   size (`PARTS` in `heroes.js`): dome + its platform 1.3x, tower 1.3x wide / 1.5x tall (63 units), wheel 2x.
   Every part is ≥ 16 units (160 m) from the track centre line. Glow levels are toned down in `heroes.js`
-  (Blender's 3–5 bleached to white); the tower's glass is very clear (opacity 0.12) so its purple lines show.
+  (Blender's 3–5 bleached to white). The twisted tower is the star: its own brighter copies of its materials
+  (`TOWER_GLOW`), glass opacity 0.22.
 - `models/kit.glb` — the owner's Blender city kit: 6 pieces (Kit_TallTower, Kit_MediumBlock, Kit_WideBlock,
   Kit_CurvyBuilding, Kit_Tree, Kit_LightPost), each a group sitting at its own row spot in the file (reset to
-  0,0,0 before use). `city.js` places copies at 2x (round platforms at 0.8x of that, so neighbours can stand
-  close; buildings collide by their own footprint): `cityLayout(track)` is pure maths (testable in Node, own
-  seed "vegas-kit"); each kit part is ONE InstancedMesh (≈30 draw calls in total).
-  1) Downtown: up to 12 skyscrapers + medium blocks north of the twisted tower (never between it and the
-  dome, and a clear ring round it), height × 0.8–1.4, random turns. 2) Wide/curvy "islands" anywhere left,
-  trees round each. 3) A fill pass on a 2.2-unit grid: small blocks (not in the dome–tower corridor) and
-  trees (~330) so little bare floor shows. 4) Light posts (0.6x) every 60 m on both road edges. Nothing but
-  posts within 40 m (`CLEAR` = 4 units) of the track centre line, measured to each platform/tree edge.
-  Glass is fairly solid and glowing (opacity 0.5, glow 1.5) so faces read as lit purple panels.
-- Bloom: ACES tone mapping, UnrealBloomPass strength 0.8 (phones 0.64), radius 0.6, threshold 0.8 —
+  0,0,0 before use). `city-layout.js` (pure maths, testable in Node, own seed "vegas-kit") places copies at 1.5x
+  like a film set, where the cameras look: a fan of buildings BEHIND each trackside corner (seen from its camera),
+  rows along both sides of the straights, ~60 trees round them, light posts (0.6x) every 60 m on both road edges.
+  Skyscrapers 30–45 units (the twisted tower, 63, stays tallest); none near the tower or dome; nothing between a
+  trackside camera and its corner; nothing but posts within 40 m (`CLEAR` = 4 units) of the track, measured to each
+  platform/tree edge. `city.js` draws each kit part as ONE InstancedMesh. Glass: opacity 0.5, glow 1.5.
+- Bloom: ACES tone mapping, UnrealBloomPass strength 0.8 (phones 0.64; × 0.6 chase, 0.7 trackside), radius 0.6, threshold 0.8 —
   tuned so purple stays purple and gold stays gold. (AgX was tried: it whitened far more.)
 - `exports/track.json` — the 3D view's track centre line as `[x, y, z]` points (scene units); remake with
   `node exports/make-track-json.js` after changing the track.
 - `track/vegas.js` — the real Las Vegas outline (from pohpingai/f1-news; f1-circuits, MIT).
-- `vendor/three/` — a copy of Three.js 0.170 (only the files we use: postprocessing, GLTFLoader + BufferGeometryUtils, Reflector). One change from the npm
+- `vendor/three/` — a copy of Three.js 0.170 (only the files we use: postprocessing incl. BokehPass + SMAAPass, GLTFLoader + BufferGeometryUtils, Reflector). One change from the npm
   package `three`: in `addons/`, `from 'three'` is rewritten to `from '../../three.module.min.js'`,
   so no "import map" is needed (older iPhones don't support import maps). Redo that when upgrading.
 

@@ -6,17 +6,18 @@
 // and draws the scene into a small picture, which is laid on the floor. That
 // picture is half the screen's size (or a quarter on phones), so it costs
 // little and comes out slightly soft, which suits a glossy floor anyway.
-// The mirror image is dimmed (REFLECT) and fades into the fog in the distance.
+// The mirror image is blurred into soft wet-road streaks, dimmed (REFLECT) and
+// fades into the fog in the distance.
 import * as THREE from "../vendor/three/three.module.min.js";
 import { Reflector } from "../vendor/three/addons/objects/Reflector.js";
 
-const REFLECT = new THREE.Color().setRGB(0.16, 0.12, 0.22); // how much light the floor gives back (purple-tinted)
+const REFLECT = new THREE.Color().setRGB(0.3, 0.22, 0.4); // how much light the floor gives back (purple-tinted)
 
 export function makeFloor(track, { small }) {
   const g = new THREE.Group();
   const size = track.radius * 16;
   const mirror = new Reflector(new THREE.PlaneGeometry(size, size), {
-    textureWidth: 512, textureHeight: 512, multisample: 0, shader: GLOSSY,
+    textureWidth: 512, textureHeight: 512, multisample: 0, shader: glossy(small ? 6 : 14),
   });
   mirror.material.uniforms.color.value = REFLECT;
   mirror.material.fog = true; // fade into the fog like everything else
@@ -31,6 +32,8 @@ export function makeFloor(track, { small }) {
   const skip = [];
   const drawMirror = mirror.onBeforeRender;
   mirror.onBeforeRender = function (...args) {
+    // No mirror picture needed while the depth-of-field step measures distances.
+    if (args[1]?.overrideMaterial) return;
     const was = skip.map((o) => o.visible);
     skip.forEach((o) => (o.visible = false));
     drawMirror.apply(this, args);
@@ -40,7 +43,7 @@ export function makeFloor(track, { small }) {
 
   // Keep the mirror picture in step with the screen size.
   g.userData.setSize = (w, h) => {
-    const k = small ? 0.25 : 0.5;
+    const k = small ? 0.2 : 0.35; // small is fine: the picture gets blurred anyway
     mirror.getRenderTarget().setSize(Math.max(64, Math.round(w * k)), Math.max(64, Math.round(h * k)));
   };
   return g;
@@ -48,10 +51,13 @@ export function makeFloor(track, { small }) {
 
 // The floor's look: the mirror picture × REFLECT (a dim, purple-tinted mirror),
 // then fog. (Based on three's own Reflector shader, with fog added.)
-const GLOSSY = {
+// Wet road: the mirror picture is blurred (`taps` samples in a small spiral),
+// stretched up-and-down like reflections on a wet street, so lights become soft
+// streaks instead of a sharp mirror image.
+const glossy = (taps) => ({
   name: "GlossyFloor",
   uniforms: {
-    color: { value: null }, tDiffuse: { value: null }, textureMatrix: { value: null },
+    color: { value: null }, tDiffuse: { value: null }, textureMatrix: { value: null }, blur: { value: 0.018 },
     ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
   },
   vertexShader: /* glsl */ `
@@ -66,19 +72,31 @@ const GLOSSY = {
       #include <fog_vertex>
     }`,
   fragmentShader: /* glsl */ `
+    #define TAPS ${taps}
     uniform vec3 color;
     uniform sampler2D tDiffuse;
+    uniform float blur;
     varying vec4 vUv;
     #include <common>
     #include <fog_pars_fragment>
     void main() {
-      vec3 base = texture2DProj(tDiffuse, vUv).rgb;
+      vec2 uv = vUv.xy / vUv.w;
+      vec3 base = vec3(0.0);
+      float total = 0.0;
+      for (int i = 0; i < TAPS; i++) {
+        float r = sqrt((float(i) + 0.5) / float(TAPS)), a = float(i) * 2.39996;
+        vec2 o = vec2(cos(a) * 0.45, sin(a) * 1.6) * r * blur; // taller than wide = wet-road streaks
+        float w = 1.0 - 0.6 * r;
+        base += texture2D(tDiffuse, uv + o).rgb * w;
+        total += w;
+      }
+      base /= total;
       gl_FragColor = vec4(base * color, 1.0);
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
       #include <fog_fragment>
     }`,
-};
+});
 
 // The purple grid and the small dots where its lines cross. Both fade out with
 // distance from the middle of the circuit, so the floor melts into the dark

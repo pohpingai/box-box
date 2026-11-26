@@ -44,6 +44,9 @@ export function heroSpots() {
 // to a level where they still glow but keep their colour.
 const GLOW = { HD_Gold_Edge: 1.1, HD_Gold_Rim: 1.1, HD_Gold_Joint: 1.5, HT_Edge_Purple: 1.4 };
 
+// How much brighter the twisted tower's parts glow than the rest (it's the star of the skyline).
+const TOWER_GLOW = { HT_Edge_Purple: 2.2, HD_Gold_Edge: 1.8, HT_Glass: 2.5, HD_Gold_Rim: 1.3 };
+
 // Loads the file and adds it to `parent`. If loading fails, the rest of the 3D
 // view carries on without the heroes (and says so in the console).
 export function addHeroes(parent) {
@@ -63,6 +66,12 @@ export function addHeroes(parent) {
       // much clearer and dimmer, so it reads as a light tint behind the lines.
       if (m.name === "HT_Glass") { m.opacity = 0.12; m.emissiveIntensity = 0.4; }
       if (m.transparent) m.depthWrite = false; // see-through glass shouldn't hide the lines behind it
+      // The twisted tower is the star: its own (brighter) copy of each material.
+      if (o.name.startsWith("Tower_")) {
+        o.material = m.clone();
+        o.material.emissiveIntensity = (TOWER_GLOW[m.name] ?? 1) * o.material.emissiveIntensity;
+        if (m.name === "HT_Glass") o.material.opacity = 0.22;
+      }
     });
     // Give each landmark its own size, standing on its own spot along the row.
     group.userData.dome = [];
